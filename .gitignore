@@ -1,0 +1,164 @@
+# =========================
+
+# 🔐 ENV & SECRETS
+
+# =========================
+
+.env
+.env.*
+!.env.example
+env.js
+
+# =========================
+
+# 🧠 OS FILES
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# 🧪 BUILD OUTPUTS (GO)
+
+# =========================
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+build/
+
+# =========================
+
+# 📦 GO MODULE CACHE (optional ignore)
+
+# =========================
+
+vendor/
+
+# =========================
+
+# 🧾 LOG FILES
+
+# =========================
+
+*.log
+logs/
+*.pid
+
+# =========================
+
+# 🧊 TEMP / CACHE
+
+# =========================
+
+tmp/
+temp/
+*.tmp
+*.cache
+
+# =========================
+
+# 🎬 MEDIA FILES (VERY IMPORTANT)
+
+# =========================
+
+# Raw uploads
+
+uploads/
+media/
+videos/
+*.mp4
+*.mkv
+*.avi
+*.mov
+
+# HLS output (future)
+
+*.m3u8
+*.ts
+
+# =========================
+
+# 🐳 DOCKER
+
+# =========================
+
+.dockerignore
+docker-compose.override.yml
+
+# =========================
+
+# 🧰 IDE / EDITOR
+
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+
+# 🔥 TEST ARTIFACTS
+
+# =========================
+
+coverage.out
+*.coverprofile
+
+# =========================
+
+# ⚙️ MINIO LOCAL DATA
+
+# =========================
+
+# if you mount local dir for MinIO
+
+minio-data/
+
+# =========================
+
+# 🧪 CURL / TEST FILES
+
+# =========================
+
+test-data/
+*.http
+
+# =========================
+
+# 📦 NODE (if frontend later)
+
+# =========================
+
+node_modules/
+.next/
+out/
+
+# =========================
+
+# 🔒 CERTS / KEYS
+
+# =========================
+
+*.pem
+*.key
+*.crt
+
+# =========================
+
+# 🧠 MISC
+
+# =========================
+
+*.bak
+*.old
+*.orig

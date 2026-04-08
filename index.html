@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Processing Pipeline</title>
+</head>
+
+<body>
+    <input type="file" name="file" id="file_input">
+    <button id="upload_button">
+        upload
+    </button>
+    <script>
+        const fileInput = document.getElementById("file_input")
+        const uploadButton = document.getElementById("upload_button")
+
+        uploadButton.addEventListener("click", async () => {
+            console.log("upload button clicked");
+
+            if (fileInput.files.length == 0) {
+                alert("Please select a file first");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch(`/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+
+                if (!res.ok) {
+                    const errtxt = await res.text();
+                    throw new Error(errtxt || "Upload failed")
+                };
+
+                const result = await res.text()
+                console.log("Server Response: ", result);
+            } catch (err) {
+                console.error("Upload error: ", err);
+            };
+
+        });
+    </script>
+</body>
+
+</html>
