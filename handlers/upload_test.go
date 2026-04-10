@@ -9,7 +9,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/minio/minio-go/v7"
+
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
 // MockStore is a mock implementation of the MinIO client for testing
@@ -73,4 +76,58 @@ func TestUploadHandler(t *testing.T) {
 	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
 		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
 	}
+}
+
+func TestUploadHandlerIntegration(t *testing.T) {
+
+	ctx := context.Background()
+	
+	minioContainer, err := miniodriver.Run(
+		ctx,
+		"minio/minio:latest",
+	)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer minioContainer.Terminate(ctx)
+
+	endpoint, _ := minioContainer.ConnectionString(ctx)
+
+	t.Logf("endpoint: %s", endpoint)
+
+
+	realClient, err := minio.New(endpoint, &minio.Options{
+		Creds: credentials.NewStaticV4("minioadmin", "minioadmin", ""),
+		Secure: false,
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create minio realClient: %v", err)
+	}
+
+	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", "sample_video.mp4")
+	part.Write([]byte("actual binary video data"))
+	writer.Close()
+ 
+	req := httptest.NewRequest("POST", "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
+
+	handler := UploadHandler(realClient, "videos")
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	expectedPrefix := "Uploaded"
+	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
+		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
+	} 
 }

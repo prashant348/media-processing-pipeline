@@ -35,7 +35,7 @@ func UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFu
 
 		_, err = client.PutObject(
 			context.Background(),
-			"videos",
+			bucketName,
 			objectName,
 			file,
 			header.Size,
@@ -45,7 +45,7 @@ func UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFu
 		)
 
 		if err != nil {
-			http.Error(w, "Error streaming to MinIO", 500)
+			http.Error(w, err.Error(), 500)
 			return
 		}
 

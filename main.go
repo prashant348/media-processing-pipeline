@@ -7,14 +7,12 @@ import (
 	"media_processing_pipeline/handlers"
 	"media_processing_pipeline/storage"
 	"net/http"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-
 	// load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error in loading .env file")
+	if err := config.InitEnv(); err != nil {
+		log.Fatal(err)
 	}
 
 	env := config.LoadEnv()
