@@ -3,13 +3,14 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/minio/minio-go/v7"
 	"media_processing_pipeline/storage"
 	"net/http"
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 )
 
-func UploadHandler(bucketName string) http.HandlerFunc {
+
+func UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// set a memory limit of 100KB
 		const maxMemory = 100 << 10
@@ -32,7 +33,7 @@ func UploadHandler(bucketName string) http.HandlerFunc {
 
 		objectName := uuid.New().String() + ".mp4"
 
-		_, err = storage.MinioClient.PutObject(
+		_, err = client.PutObject(
 			context.Background(),
 			"videos",
 			objectName,

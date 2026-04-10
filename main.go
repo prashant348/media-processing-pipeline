@@ -21,11 +21,14 @@ func main() {
 
 	// initialize minio 
 	storage.InitMinIO(env)
+	// create minio client
+	client := storage.MinioClient
 	
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", handlers.HomeHandler)
-	mux.HandleFunc("POST /upload", handlers.UploadHandler(env.MinioBucketName))
+	// pass minio client and bucket name as Dependency injection to upload handler
+	mux.HandleFunc("POST /upload", handlers.UploadHandler(client, env.MinioBucketName))
 	
 	fmt.Printf("Server is running http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
