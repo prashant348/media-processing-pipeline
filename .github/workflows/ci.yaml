@@ -10,15 +10,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      # Docker is already available on ubuntu-latest,
-      # so Testcontainers will work out of the box!
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v5 
         with:
           go-version: "1.25.5"
           cache: true
