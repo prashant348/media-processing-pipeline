@@ -3,14 +3,17 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
+	"media_processing_pipeline/internal/jobs"
 	"media_processing_pipeline/storage"
 	"net/http"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )
 
-
-func UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFunc {
+func (h *Handler) UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// set a memory limit of 100KB
 		const maxMemory = 100 << 10
@@ -48,6 +51,17 @@ func UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFu
 			http.Error(w, err.Error(), 500)
 			return
 		}
+
+		videoID := strings.Split(objectName, ".")[0]
+
+		job := jobs.Job{
+			VideoID: videoID,
+			FileKey: objectName,
+		}
+
+		h.Queue <- job
+
+		log.Printf("Job queued: %s\n", videoID)
 
 		fmt.Fprintf(w, "Uploaded %s", objectName)
 	}
