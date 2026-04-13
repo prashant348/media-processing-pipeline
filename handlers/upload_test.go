@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"media_processing_pipeline/internal/queue"
+	"media_processing_pipeline/internal/worker"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -30,6 +32,9 @@ func (m *MockStore) PutObject(
 }
 
 func TestUploadHandler(t *testing.T) {
+
+	queue.InitQueue(100)
+	worker.InitWorkers(3)
 	// this is the pointer to the empty buffer created
 	body := &bytes.Buffer{}
 	// create the formatter/writer on/for that empty buffer
@@ -79,6 +84,9 @@ func TestUploadHandler(t *testing.T) {
 }
 
 func TestUploadHandlerIntegration(t *testing.T) {
+
+	queue.InitQueue(100)
+	worker.InitWorkers(3)
 
 	ctx := context.Background()
 	
