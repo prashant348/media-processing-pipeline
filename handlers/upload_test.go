@@ -68,9 +68,15 @@ func TestUploadHandler(t *testing.T) {
 	mockClient := &MockStore{}
 	// run the handler by passing DIs minio client and bucket name
 	queue := queue.InitQueue(10)
-	worker.InitWorkers(3, queue)
+	pool := &worker.WorkerPool{
+		Queue:       queue,
+		WorkerCount: 3,
+	}
+
+	pool.Start()
+
 	handler := &Handler{
-		Queue: queue,
+		Pool: pool,
 	}
 	uploadHandler := handler.UploadHandler(mockClient, "videos")
 	uploadHandler.ServeHTTP(rec, req)
@@ -127,9 +133,15 @@ func TestUploadHandlerIntegration(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	queue := queue.InitQueue(10)
-	worker.InitWorkers(3, queue)
+	pool := &worker.WorkerPool{
+		Queue:       queue,
+		WorkerCount: 3,
+	}
+
+	pool.Start()
+
 	handler := &Handler{
-		Queue: queue,
+		Pool: pool,
 	}
 	uploadHandler := handler.UploadHandler(realClient, "videos")
 	uploadHandler.ServeHTTP(rec, req)

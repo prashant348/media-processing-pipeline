@@ -59,7 +59,7 @@ func (h *Handler) UploadHandler(client storage.ObjectStore, bucketName string) h
 			FileKey: objectName,
 		}
 
-		h.Queue <- job
+		h.Pool.Submit(job)
 
 		log.Printf("Job queued: %s\n", videoID)
 
