@@ -20,13 +20,18 @@ func main() {
 	env := config.LoadEnv()
 
 	queue := queue.InitQueue(100)
-	worker.InitWorkers(3, queue)
-
-	handler := &handlers.Handler{
-		Queue: queue,
+	pool := &worker.WorkerPool{
+		Queue:       queue,
+		WorkerCount: 3,
 	}
 
-	// initialize minio 
+	pool.Start()
+
+	handler := &handlers.Handler{
+		Pool: pool,
+	}
+
+	// initialize minio
 	storage.InitMinIO(env)
 	// create minio client
 	client := storage.MinioClient

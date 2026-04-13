@@ -1,7 +1,9 @@
 package handlers
 
-import "media_processing_pipeline/internal/jobs"
+import (
+	"media_processing_pipeline/internal/worker"
+)
 
 type Handler struct {
-	Queue chan jobs.Job
+	Pool *worker.WorkerPool
 }
