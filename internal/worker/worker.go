@@ -3,22 +3,21 @@ package worker
 import (
 	"log"
 	"media_processing_pipeline/internal/jobs"
-	"media_processing_pipeline/internal/queue"
 	"time"
 )
 
 
-func InitWorkers(numberOfWorkers int) {
+func InitWorkers(numberOfWorkers int, queue chan jobs.Job) {
 	for i := range numberOfWorkers {
-		StartWorker(i + 1)
+		go StartWorker(i + 1, queue)
 	}
 }
 
-func StartWorker(id int) {
+func StartWorker(id int, queue chan jobs.Job) {
 	go func() {
 		log.Printf("Worker %d started\n", id)
 
-		for job := range queue.JobQueue {
+		for job := range queue {
 			processJob(id, job)
 		}
 

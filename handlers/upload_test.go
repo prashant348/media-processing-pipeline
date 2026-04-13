@@ -33,8 +33,6 @@ func (m *MockStore) PutObject(
 
 func TestUploadHandler(t *testing.T) {
 
-	queue.InitQueue(100)
-	worker.InitWorkers(3)
 	// this is the pointer to the empty buffer created
 	body := &bytes.Buffer{}
 	// create the formatter/writer on/for that empty buffer
@@ -57,7 +55,7 @@ func TestUploadHandler(t *testing.T) {
 	// finish the formatting by
 	writer.Close()
 	fmt.Printf("----------DEBUG: What is inside the buffer now?----------------\n")
-	fmt.Println((*body).String()) 
+	fmt.Println((*body).String())
 	fmt.Printf("----------------------------------------------------------------\n")
 	// create a fake request
 	req := httptest.NewRequest("POST", "/upload", body)
@@ -69,8 +67,13 @@ func TestUploadHandler(t *testing.T) {
 	// create a fake minio client
 	mockClient := &MockStore{}
 	// run the handler by passing DIs minio client and bucket name
-	handler := UploadHandler(mockClient, "videos")
-	handler.ServeHTTP(rec, req)
+	queue := queue.InitQueue(10)
+	worker.InitWorkers(3, queue)
+	handler := &Handler{
+		Queue: queue,
+	}
+	uploadHandler := handler.UploadHandler(mockClient, "videos")
+	uploadHandler.ServeHTTP(rec, req)
 
 	// assesrtions
 	if rec.Code != http.StatusOK {
@@ -85,11 +88,8 @@ func TestUploadHandler(t *testing.T) {
 
 func TestUploadHandlerIntegration(t *testing.T) {
 
-	queue.InitQueue(100)
-	worker.InitWorkers(3)
-
 	ctx := context.Background()
-	
+
 	minioContainer, err := miniodriver.Run(
 		ctx,
 		"minio/minio:latest",
@@ -105,9 +105,8 @@ func TestUploadHandlerIntegration(t *testing.T) {
 
 	t.Logf("endpoint: %s", endpoint)
 
-
 	realClient, err := minio.New(endpoint, &minio.Options{
-		Creds: credentials.NewStaticV4("minioadmin", "minioadmin", ""),
+		Creds:  credentials.NewStaticV4("minioadmin", "minioadmin", ""),
 		Secure: false,
 	})
 
@@ -122,13 +121,18 @@ func TestUploadHandlerIntegration(t *testing.T) {
 	part, _ := writer.CreateFormFile("file", "sample_video.mp4")
 	part.Write([]byte("actual binary video data"))
 	writer.Close()
- 
+
 	req := httptest.NewRequest("POST", "/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 
-	handler := UploadHandler(realClient, "videos")
-	handler.ServeHTTP(rec, req)
+	queue := queue.InitQueue(10)
+	worker.InitWorkers(3, queue)
+	handler := &Handler{
+		Queue: queue,
+	}
+	uploadHandler := handler.UploadHandler(realClient, "videos")
+	uploadHandler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", rec.Code)
@@ -137,5 +141,5 @@ func TestUploadHandlerIntegration(t *testing.T) {
 	expectedPrefix := "Uploaded"
 	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
 		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
-	} 
+	}
 }

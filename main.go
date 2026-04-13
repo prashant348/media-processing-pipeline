@@ -19,19 +19,23 @@ func main() {
 
 	env := config.LoadEnv()
 
-	queue.InitQueue(100)
-	worker.InitWorkers(3)
+	queue := queue.InitQueue(100)
+	worker.InitWorkers(3, queue)
+
+	handler := &handlers.Handler{
+		Queue: queue,
+	}
 
 	// initialize minio 
 	storage.InitMinIO(env)
 	// create minio client
 	client := storage.MinioClient
-	
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", handlers.HomeHandler)
 	// pass minio client and bucket name as Dependency injection to upload handler
-	mux.HandleFunc("POST /api/upload", handlers.UploadHandler(client, env.MinioBucketName))
+	mux.HandleFunc("POST /api/upload", handler.UploadHandler(client, env.MinioBucketName))
 
 	fmt.Printf("Server is running http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", mux))
