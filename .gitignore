@@ -75,6 +75,7 @@ temp/
 uploads/
 media/
 videos/
+output/
 *.mp4
 *.mkv
 *.avi
