@@ -80,7 +80,7 @@ output/
 *.mkv
 *.avi
 *.mov
-!testdata/*.mp4
+!tests/testdata/*mp4
 
 # HLS output (future)
 
