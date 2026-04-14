@@ -75,10 +75,12 @@ temp/
 uploads/
 media/
 videos/
+output/
 *.mp4
 *.mkv
 *.avi
 *.mov
+!testdata/*.mp4
 
 # HLS output (future)
 

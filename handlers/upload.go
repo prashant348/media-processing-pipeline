@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"media_processing_pipeline/internal/jobs"
-	"media_processing_pipeline/storage"
 	"net/http"
 	"strings"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func (h *Handler) UploadHandler(client storage.ObjectStore, bucketName string) http.HandlerFunc {
+func (h *Handler) UploadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// set a memory limit of 100KB
 		const maxMemory = 100 << 10
@@ -36,9 +35,9 @@ func (h *Handler) UploadHandler(client storage.ObjectStore, bucketName string) h
 
 		objectName := uuid.New().String() + ".mp4"
 
-		_, err = client.PutObject(
+		info, err := h.StorageClient.PutObject(
 			context.Background(),
-			bucketName,
+			h.Env.MinioBucketName,
 			objectName,
 			file,
 			header.Size,
@@ -46,6 +45,8 @@ func (h *Handler) UploadHandler(client storage.ObjectStore, bucketName string) h
 				ContentType: "application/octet-stream",
 			},
 		)
+
+		log.Printf("Upload size: %d", info.Size)
 
 		if err != nil {
 			http.Error(w, err.Error(), 500)
