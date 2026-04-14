@@ -18,6 +18,13 @@ type ObjectStore interface {
 		size int64,
 		opts minio.PutObjectOptions,
 	) (info minio.UploadInfo, err error)
+	
+	GetObject(
+		ctx context.Context, 
+		bucketName string, 
+		objectName string, 
+		opts minio.GetObjectOptions,
+	) (*minio.Object, error)
 }
 
 var MinioClient *minio.Client
