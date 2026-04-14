@@ -24,6 +24,10 @@ type WorkerPool struct {
 	WaitGroup     *sync.WaitGroup
 }
 
+type WorkerPoolInterface interface {
+	Submit(job jobs.Job)
+}
+
 func (wp *WorkerPool) Start() {
 	for i := range wp.WorkerCount {
 		go wp.worker(i + 1)
@@ -33,7 +37,7 @@ func (wp *WorkerPool) Start() {
 func (wp *WorkerPool) worker(id int) {
 	log.Printf("Worker %d started", id)
 	for job := range wp.Queue {
-		wp.processJob(id, job, wp.Env)
+		wp.ProcessJob(id, job, wp.Env)
 		wp.WaitGroup.Done()
 	}
 }
@@ -43,7 +47,7 @@ func (wp *WorkerPool) Submit(job jobs.Job) {
 	wp.Queue <- job
 }
 
-func (wp *WorkerPool) processJob(workerID int, job jobs.Job, env *config.Env) {
+func (wp *WorkerPool) ProcessJob(workerID int, job jobs.Job, env *config.Env) {
 	log.Printf("Worker %d picked job: %s\n", workerID, job.VideoID)
 
 	inputPath := fmt.Sprintf("tmp/%s.mp4", job.VideoID)

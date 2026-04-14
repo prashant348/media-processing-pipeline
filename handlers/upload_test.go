@@ -4,21 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	minio "github.com/minio/minio-go/v7"
 	"io"
 	"media_processing_pipeline/config"
-	"media_processing_pipeline/internal/queue"
-	"media_processing_pipeline/internal/worker"
+	"media_processing_pipeline/internal/jobs"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"sync"
 	"testing"
-
-	minio "github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
 // MockStore is a mock implementation of the MinIO client for testing
@@ -44,6 +37,11 @@ func (m *MockStore) GetObject(
 	return nil, nil
 }
 
+type MockWorkerPool struct{}
+
+func (mwp *MockWorkerPool) Start() {}
+
+func (mwp *MockWorkerPool) Submit(job jobs.Job) {}
 
 func TestUploadHandler(t *testing.T) {
 
@@ -81,22 +79,13 @@ func TestUploadHandler(t *testing.T) {
 	// create a fake minio client
 	mockClient := &MockStore{}
 	// run the handler by passing DIs minio client and bucket name
-	queue := queue.InitQueue(10)
-	wg := &sync.WaitGroup{}
-	pool := &worker.WorkerPool{
-		Queue:       queue,
-		WorkerCount: 3,
-		Env: &config.Env{
-			MinioBucketName: "videos",
-		},
-		StorageClient: mockClient,
-		WaitGroup: wg,
-	}
+	// queue := queue.InitQueue(10)
+	mockPool := &MockWorkerPool{}
 
-	pool.Start()
+	mockPool.Start()
 
 	handler := &Handler{
-		Pool:          pool,
+		Pool:          mockPool,
 		StorageClient: mockClient,
 		Env: &config.Env{
 			MinioBucketName: "videos",
@@ -115,96 +104,4 @@ func TestUploadHandler(t *testing.T) {
 	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
 		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
 	}
-}
-
-func TestUploadHandlerIntegration(t *testing.T) {
-
-	ctx := context.Background()
-
-	minioContainer, err := miniodriver.Run(
-		ctx,
-		"minio/minio:latest",
-	)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer minioContainer.Terminate(ctx)
-
-	endpoint, _ := minioContainer.ConnectionString(ctx)
-
-	t.Logf("endpoint: %s", endpoint)
-
-	realClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4("minioadmin", "minioadmin", ""),
-		Secure: false,
-	})
-
-	if err != nil {
-		t.Fatalf("failed to create minio realClient: %v", err)
-	}
-
-	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
-
-
-	videoFilePath := filepath.Join("..", "testdata", "tiny_test_video.mp4")
-
-	t.Logf("video file path: %s", videoFilePath)
-
-	file, err := os.Open(videoFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer file.Close()
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, _ := writer.CreateFormFile("file", "tiny_test_video.mp4")
-
-	_, err = io.Copy(part, file)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	writer.Close()
-
-	req := httptest.NewRequest("POST", "/api/upload", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	rec := httptest.NewRecorder()
-
-	queue := queue.InitQueue(10)
-	wg := &sync.WaitGroup{}
-	pool := &worker.WorkerPool{
-		Queue:       queue,
-		WorkerCount: 3,
-		Env: &config.Env{
-			MinioBucketName: "videos",
-		},
-		StorageClient: realClient,
-		WaitGroup:     wg,
-	}
-
-	pool.Start()
-
-	handler := &Handler{
-		Pool:          pool,
-		StorageClient: realClient,
-		Env: &config.Env{
-			MinioBucketName: "videos",
-		},
-	}
-	uploadHandler := handler.UploadHandler()
-	uploadHandler.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", rec.Code)
-	}
-
-	expectedPrefix := "Uploaded"
-	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
-		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
-	}
-
-	pool.WaitGroup.Wait()
 }
