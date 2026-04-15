@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"media_processing_pipeline/config"
+	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/storage"
 	"media_processing_pipeline/internal/worker"
-	"media_processing_pipeline/storage"
 )
 
 type Handler struct {

@@ -3,12 +3,9 @@ package tests
 import (
 	"bytes"
 	"context"
-	minio "github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 	"io"
-	"media_processing_pipeline/config"
-	"media_processing_pipeline/handlers"
+	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/handlers"
 	"media_processing_pipeline/internal/jobs"
 	"mime/multipart"
 	"net/http"
@@ -16,6 +13,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
 type MockWorkerPool struct{}

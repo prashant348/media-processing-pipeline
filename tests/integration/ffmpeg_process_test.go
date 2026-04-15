@@ -2,10 +2,7 @@ package tests
 
 import (
 	"context"
-	minio "github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
-	"media_processing_pipeline/config"
+	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/jobs"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
 func TestFFmpegProcess(t *testing.T) {
