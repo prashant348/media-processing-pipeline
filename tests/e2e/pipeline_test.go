@@ -3,19 +3,20 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 	"io"
-	"media_processing_pipeline/config"
-	"media_processing_pipeline/handlers"
+	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/handlers"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
+
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
@@ -118,7 +119,7 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
 		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
 	}
-	
+
 	pool.WaitGroup.Wait()
 
 	// use output as assertion

@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"media_processing_pipeline/config"
-	"media_processing_pipeline/handlers"
+	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/handlers"
 	"media_processing_pipeline/internal/queue"
+	"media_processing_pipeline/internal/storage"
 	"media_processing_pipeline/internal/worker"
-	"media_processing_pipeline/storage"
 	"net/http"
 	"sync"
 )
@@ -52,8 +52,8 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /", handlers.HomeHandler)
-	mux.HandleFunc("GET /video/", handlers.VideoHandler)
+	mux.HandleFunc("GET /", handler.HomeHandler)
+	mux.HandleFunc("GET /video/", handler.VideoHandler)
 	mux.Handle("GET /api/stream/", http.StripPrefix("/api/stream/", fs))
 	// pass minio client and bucket name as Dependency injection to upload handler
 	mux.HandleFunc("POST /api/upload", handler.UploadHandler())

@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
-	"media_processing_pipeline/config"
+	"media_processing_pipeline/internal/config"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )

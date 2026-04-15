@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	minio "github.com/minio/minio-go/v7"
 	"io"
-	"media_processing_pipeline/config"
+	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/jobs"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	minio "github.com/minio/minio-go/v7"
 )
 
 // MockStore is a mock implementation of the MinIO client for testing
