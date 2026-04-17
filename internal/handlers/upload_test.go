@@ -43,6 +43,7 @@ type MockWorkerPool struct{}
 func (mwp *MockWorkerPool) Start() {}
 
 func (mwp *MockWorkerPool) Submit(job jobs.Job) {}
+func (mwp *MockWorkerPool) GetQueue() chan jobs.Job { return nil }
 
 func TestUploadHandler(t *testing.T) {
 

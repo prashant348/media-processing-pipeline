@@ -57,6 +57,7 @@ func main() {
 	mux.Handle("GET /api/stream/", http.StripPrefix("/api/stream/", fs))
 	// pass minio client and bucket name as Dependency injection to upload handler
 	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
+	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
 
 	fmt.Printf("Server is running http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", mux))

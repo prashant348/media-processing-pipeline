@@ -6,6 +6,7 @@ import (
 	"io"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
+	"media_processing_pipeline/internal/jobs"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
 	"mime/multipart"
@@ -102,11 +103,20 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	uploadHandler.ServeHTTP(rec, req)
 
 	httpResponse := rec.Body.String()
+
 	t.Log(httpResponse)
 	objectName := strings.Split(httpResponse, " ")[1]
 	t.Log(objectName)
 	videoID := strings.Split(objectName, ".")[0]
 	t.Log(videoID)
+
+	jobID := videoID
+
+	status := jobs.GetStatus(jobID)
+
+	if status != jobs.JobStatusPending && status != jobs.JobStatusProcessing {
+		t.Errorf("Expected status to be %s or %s, got %s", jobs.JobStatusPending, jobs.JobStatusProcessing, status)
+	}
 
 	// define output path
 	outputPath := filepath.Join("output", videoID, "index.m3u8")
@@ -126,5 +136,11 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	_, err = os.Stat(outputPath)
 	if err != nil {
 		t.Fatal("HLS playlist not generated")
+	}
+
+	status = jobs.GetStatus(jobID)
+
+	if status != jobs.JobStatusCompleted {
+		t.Errorf("Exected status to be %s, got %s", jobs.JobStatusCompleted, status)
 	}
 }

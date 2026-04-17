@@ -26,6 +26,11 @@ type WorkerPool struct {
 
 type WorkerPoolInterface interface {
 	Submit(job jobs.Job)
+	GetQueue() chan jobs.Job
+}
+
+func (wp *WorkerPool) GetQueue() chan jobs.Job {
+	return wp.Queue
 }
 
 func (wp *WorkerPool) Start() {
@@ -37,17 +42,31 @@ func (wp *WorkerPool) Start() {
 func (wp *WorkerPool) worker(id int) {
 	log.Printf("Worker %d started", id)
 	for job := range wp.Queue {
-		wp.ProcessJob(id, job, wp.Env)
-		wp.WaitGroup.Done()
+
+		func() {
+			defer wp.WaitGroup.Done()
+			
+			jobs.SetStatus(job.VideoID, jobs.JobStatusProcessing)
+			err, _ := wp.ProcessJob(id, job, wp.Env)
+
+			if err != nil {
+				log.Printf("Worker %d: Error processing job %s: %v", id, job.VideoID, err)
+				jobs.SetStatus(job.VideoID, jobs.JobStatusFailed)
+			} else {
+				jobs.SetStatus(job.VideoID, jobs.JobStatusCompleted)
+			}
+		}()
 	}
 }
 
 func (wp *WorkerPool) Submit(job jobs.Job) {
 	wp.WaitGroup.Add(1)
+	jobs.SetStatus(job.VideoID, jobs.JobStatusPending)
 	wp.Queue <- job
 }
 
-func (wp *WorkerPool) ProcessJob(workerID int, job jobs.Job, env *config.Env) {
+func (wp *WorkerPool) ProcessJob(workerID int, job jobs.Job, env *config.Env) (error, bool) {
+
 	log.Printf("Worker %d picked job: %s\n", workerID, job.VideoID)
 
 	inputPath := fmt.Sprintf("tmp/%s.mp4", job.VideoID)
@@ -67,32 +86,22 @@ func (wp *WorkerPool) ProcessJob(workerID int, job jobs.Job, env *config.Env) {
 
 	if err != nil {
 		log.Println("Error getting object: ", err)
-		return
+		return err, false
 	}
 	defer obj.Close()
 
-	// log.Printf("From processJob func: obj: %v", obj)
-	// log.Printf("size of obj: %v", unsafe.Sizeof(obj))
-	stat, err := obj.Stat()
-	if err != nil {
-		log.Println("Stat error:", err)
-	} else {
-		log.Println("Object size:", stat.Size)
-	}
 
 	file, err := os.Create(inputPath)
 	if err != nil {
 		log.Println("Error creating file: ", err)
-		return
+		return err, false
 	}
 	defer file.Close()
-
-	// log.Printf("From processJob func: file: %v", file)
 
 	_, err = io.Copy(file, obj)
 	if err != nil {
 		log.Println("Error copying object: ", err)
-		return
+		return err, false
 	}
 
 	cmd := exec.Command(
@@ -113,8 +122,10 @@ func (wp *WorkerPool) ProcessJob(workerID int, job jobs.Job, env *config.Env) {
 
 	if err := cmd.Run(); err != nil {
 		log.Printf("FFmpeg failed for %s: %v\n", job.VideoID, err)
-		return
+		return err, false
 	}
-
+	
 	log.Printf("Worker %d finished processing: %s\n", workerID, job.VideoID)
+
+	return nil, true
 }
