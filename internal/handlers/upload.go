@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	// "fmt"
 	"log"
 	"media_processing_pipeline/internal/jobs"
 	"net/http"
@@ -64,7 +65,9 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 
 		log.Printf("Job queued: %s\n", videoID)
 
-		fmt.Fprintf(w, "Uploaded %s", objectName)
+		json.NewEncoder(w).Encode(map[string]string{
+			"video_id": videoID, 
+		});
 	}
 
 }

@@ -10,6 +10,7 @@ import (
 	"media_processing_pipeline/internal/worker"
 	"net/http"
 	"sync"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -47,19 +48,26 @@ func main() {
 		StorageClient: client,
 	}
 
-	// initialize minio
-	fs := http.FileServer(http.Dir("output"))
+	fs := http.FileServer(http.Dir("./output"))
 
 	mux := http.NewServeMux()
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowCredentials: true,
+		AllowedMethods: []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+		Debug: true, // development ke time logs dikhayega
+	})
+
 	mux.HandleFunc("GET /", handler.HomeHandler)
-	mux.HandleFunc("GET /video/", handler.VideoHandler)
-	mux.Handle("GET /api/stream/", http.StripPrefix("/api/stream/", fs))
+	mux.Handle("GET /api/stream/", c.Handler(http.StripPrefix("/api/stream/", fs)))
 	// pass minio client and bucket name as Dependency injection to upload handler
 	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
 	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
 
+
 	fmt.Printf("Server is running http://localhost:8080\n")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(":8080", c.Handler(mux)))
 
 }

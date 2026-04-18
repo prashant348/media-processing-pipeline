@@ -3,6 +3,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
@@ -14,7 +15,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
+	// "strings"
 	"sync"
 	"testing"
 
@@ -22,6 +23,10 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
+
+type UploadResponse struct {
+	VideoID  string `json:"video_id"`
+}
 
 func TestUploadToProcessPipeline(t *testing.T) {
 
@@ -102,14 +107,20 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	uploadHandler := handler.UploadHandler()
 	uploadHandler.ServeHTTP(rec, req)
 
-	httpResponse := rec.Body.String()
+	httpResponse := rec.Body.Bytes()
 
-	t.Log(httpResponse)
-	objectName := strings.Split(httpResponse, " ")[1]
-	t.Log(objectName)
-	videoID := strings.Split(objectName, ".")[0]
-	t.Log(videoID)
+	jsonResponse := &UploadResponse{}
+	
+	err = json.Unmarshal(httpResponse, jsonResponse)
+	if err != nil {
+		t.Fatalf("Failed to parse json: %s", err)
+	}
 
+	if jsonResponse.VideoID == "" {
+		t.Errorf("Expected video ID, got empty string")
+	}
+
+	videoID := jsonResponse.VideoID
 	jobID := videoID
 
 	status := jobs.GetStatus(jobID)
@@ -123,11 +134,6 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	t.Log(outputPath)
 	if rec.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", rec.Code)
-	}
-
-	expectedPrefix := "Uploaded"
-	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
-		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
 	}
 
 	pool.WaitGroup.Wait()

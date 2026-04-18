@@ -1,11 +1,13 @@
 package handlers
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func (h *Handler) HomeHandler(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	filePath := "web/templates/index.html"
-	http.ServeFile(w, r, filePath)
+	fmt.Fprintf(w, "Go server is running and up")
 }
