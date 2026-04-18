@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"media_processing_pipeline/internal/config"
@@ -44,6 +45,10 @@ func (mwp *MockWorkerPool) Start() {}
 
 func (mwp *MockWorkerPool) Submit(job jobs.Job) {}
 func (mwp *MockWorkerPool) GetQueue() chan jobs.Job { return nil }
+
+type UploadResponse struct {
+	VideoID  string `json:"video_id"`
+}
 
 func TestUploadHandler(t *testing.T) {
 
@@ -102,8 +107,15 @@ func TestUploadHandler(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", rec.Code)
 	}
 
-	expectedPrefix := "Uploaded"
-	if !bytes.HasPrefix(rec.Body.Bytes(), []byte(expectedPrefix)) {
-		t.Errorf("expected response to start with %s, got %s", expectedPrefix, rec.Body.String())
+	responseBody := rec.Body.Bytes()
+	jsonResponse := &UploadResponse{}
+	
+	err = json.Unmarshal(responseBody, jsonResponse)
+	if err != nil {
+		t.Fatalf("Failed to parse json: %s", err)
+	}
+
+	if jsonResponse.VideoID == "" {
+		t.Errorf("Expected video ID, got empty string")
 	}
 }
