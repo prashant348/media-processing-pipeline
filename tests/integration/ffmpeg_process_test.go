@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -98,16 +97,18 @@ func TestFFmpegProcess(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		StorageClient: realClient,
-		Env: &config.Env{
+	pool := worker.NewWorkerPool(
+		queue,
+		3,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-		WaitGroup: wg,
-		JobStore: jobStore,
-	}
+		realClient,
+		wg,
+		jobStore,
+	)
+
+	pool.Start()
 
 	// create videoID from objectName
 	videoID := strings.Split(objectName, ".")[0]
@@ -115,14 +116,12 @@ func TestFFmpegProcess(t *testing.T) {
 		"video_id": videoID,
 	}
 	// create job
-	job := &job.Job{
-		ID: "test-job-id",
-		Type: job.JobTypeTranscoding,
-		Payload: payload,
-		Status: job.JobStatusPending,
-		LastError: "",
-		CreatedAt: time.Now(),
-	}
+	job := job.NewJob(
+		"test-job-id",
+		job.JobTypeTranscoding,
+		payload,
+		job.JobStatusPending,
+	)
 
 	// pass the job for ffmpeg processing
 	pool.TranscodingJob(1, job, pool.Env)

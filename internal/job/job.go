@@ -36,6 +36,22 @@ type JobStore struct {
 	Jobs map[string]*Job
 }
 
+func NewJob(
+	id string,
+	jobType JobType,
+	payload Payload,
+	status JobStatus,
+) *Job {
+	return &Job{
+		ID: id,
+		Type: jobType,
+		Payload: payload,
+		Status: status,
+		LastError: "",
+		CreatedAt: time.Now(),
+	}
+}
+
 func NewJobStore() *JobStore {
 	return &JobStore{Jobs: make(map[string]*Job)}
 }

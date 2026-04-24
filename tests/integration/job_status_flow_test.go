@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
+
 
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -99,16 +99,16 @@ func TestJobStatusFlow(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		StorageClient: realClient,
-		Env: &config.Env{
+	pool := worker.NewWorkerPool(
+		queue,
+		3,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-		WaitGroup: wg,
-		JobStore: jobStore,
-	}
+		realClient,
+		wg,
+		jobStore,
+	)
 
 	// create videoID from objectName
 	videoID := strings.Split(objectName, ".")[0]
@@ -117,14 +117,12 @@ func TestJobStatusFlow(t *testing.T) {
 	}
 
 	// create job
-	j := &job.Job{
-		ID: "test-job-id",
-		Type: job.JobTypeTranscoding,
-		Payload: payload,
-		Status: job.JobStatusPending,
-		LastError: "",
-		CreatedAt: time.Now(),
-	}
+	j := job.NewJob(
+		"test-job-id",
+		job.JobTypeTranscoding,
+		payload,
+		job.JobStatusPending,
+	)
 
 	pool.Start()
 

@@ -93,13 +93,13 @@ func TestUploadFakeFileToStore(t *testing.T) {
 
 	mockPool.Start()
 
-	handler := &handlers.Handler{
-		Pool:          mockPool,
-		StorageClient: realClient,
-		Env: &config.Env{
+	handler := handlers.NewHandler(
+		mockPool,
+		realClient,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-	}
+	)
 
 	uploadHandler := handler.UploadHandler()
 	uploadHandler.ServeHTTP(rec, req)
@@ -185,13 +185,14 @@ func TestUploadRealFileToStore(t *testing.T) {
 
 	mockPool.Start()
 
-	handler := &handlers.Handler{
-		Pool:          mockPool,
-		StorageClient: realClient,
-		Env: &config.Env{
+	handler := handlers.NewHandler(
+		mockPool,
+		realClient,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-	}
+	)
+
 
 	uploadHandler := handler.UploadHandler()
 	uploadHandler.ServeHTTP(rec, req)
