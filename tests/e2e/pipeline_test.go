@@ -81,9 +81,9 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	jobStore := job.NewJobStore()
-	queue := queue.NewQueue(10)
+	queue, _ := queue.NewQueue(10)
 	wg := &sync.WaitGroup{}
-	pool := worker.NewWorkerPool(
+	pool, _ := worker.NewWorkerPool(
 		queue,
 		3,
 		&config.Env{

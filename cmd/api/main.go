@@ -30,11 +30,11 @@ func main() {
 	// create job store
 	jobStore := job.NewJobStore()
 	// create jobs queue
-	queue := queue.NewQueue(100)
+	queue, _ := queue.NewQueue(100)
 	// create wait group
 	wg := &sync.WaitGroup{}
 	// create worker pool
-	pool := worker.NewWorkerPool(
+	pool, _ := worker.NewWorkerPool(
 		queue,
 		3,
 		env,

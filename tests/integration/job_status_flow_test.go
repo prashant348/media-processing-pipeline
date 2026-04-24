@@ -93,13 +93,13 @@ func TestJobStatusFlow(t *testing.T) {
 
 	jobStore := job.NewJobStore()
 	// initialize queue
-	queue := queue.NewQueue(10)
+	queue, _ := queue.NewQueue(10)
 
 	// create wait group
 	wg := &sync.WaitGroup{}
 
 	// create worker pool
-	pool := worker.NewWorkerPool(
+	pool, _ := worker.NewWorkerPool(
 		queue,
 		3,
 		&config.Env{
@@ -118,7 +118,6 @@ func TestJobStatusFlow(t *testing.T) {
 
 	// create job
 	j := job.NewJob(
-		"test-job-id",
 		job.JobTypeTranscoding,
 		payload,
 		job.JobStatusPending,

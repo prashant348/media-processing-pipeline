@@ -81,7 +81,7 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 
 	mockClient := &MockStore{}
 
-	queue := queue.NewQueue(10)
+	queue, _ := queue.NewQueue(10)
 
 	pool := &worker.WorkerPool{
 		Queue:         queue,
@@ -142,7 +142,7 @@ func TestStatusHandlerWithInvalidJob(t *testing.T) {
 
 	mockClient := &MockStore{}
 
-	queue := queue.NewQueue(10)
+	queue, _ := queue.NewQueue(10)
 
 	pool := &worker.WorkerPool{
 		Queue:         queue,

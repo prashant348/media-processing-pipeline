@@ -13,12 +13,17 @@ type Queue struct {
 	IsClosed bool
 }
 
-func NewQueue(capacity int) *Queue {
+func NewQueue(capacity int) (*Queue, error) {
+
+	if capacity < 1 {
+		return nil, errors.New("Queue capacity can't be zero or negative!")
+	}
+
 	return &Queue{
 		Queue:    make(chan *job.Job, capacity),
 		Capacity: capacity,
 		IsClosed: false,
-	}
+	}, nil
 }
 
 func (q *Queue) Enqueue(j *job.Job) error {
