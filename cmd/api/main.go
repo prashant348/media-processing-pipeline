@@ -34,39 +34,38 @@ func main() {
 	// create wait group
 	wg := &sync.WaitGroup{}
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		Env:           env,
-		StorageClient: client,
-		WaitGroup:     wg,
-		JobStore: jobStore,
-	}
+	pool := worker.NewWorkerPool(
+		queue,
+		3,
+		env,
+		client,
+		wg,
+		jobStore,
+	)
 	// start the worker pool
 	pool.Start()
 
 	// create handler
-	handler := &handlers.Handler{
-		Pool:          pool,
-		Env:           env,
-		StorageClient: client,
-	}
+	handler := handlers.NewHandler(
+		pool,
+		client,
+		env,
+	)
 
 	mux := http.NewServeMux()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"http://localhost:5173"},
 		AllowCredentials: true,
-		AllowedMethods: []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
-		Debug: true, // development ke time logs dikhayega
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		Debug:            true, // development ke time logs dikhayega
 	})
 
 	mux.HandleFunc("GET /", handler.HomeHandler)
 	mux.HandleFunc("GET /api/stream/{video_id}/index.m3u8", handler.StreamHandler)
 	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
 	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
-
 
 	fmt.Printf("Server is running http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", c.Handler(mux)))

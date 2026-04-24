@@ -11,3 +11,15 @@ type Handler struct {
 	StorageClient storage.ObjectStore
 	Env           *config.Env
 }
+
+func NewHandler(
+	pool worker.WorkerPoolInterface,
+	storageClient storage.ObjectStore,
+	env *config.Env,
+) *Handler {
+	return &Handler{
+		Pool:          pool,
+		StorageClient: storageClient,
+		Env:           env,
+	}
+}

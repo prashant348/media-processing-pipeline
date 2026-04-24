@@ -83,26 +83,27 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	jobStore := job.NewJobStore()
 	queue := queue.NewQueue(10)
 	wg := &sync.WaitGroup{}
-	pool := &worker.WorkerPool{
-		Queue:       queue,
-		WorkerCount: 3,
-		Env: &config.Env{
+	pool := worker.NewWorkerPool(
+		queue,
+		3,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-		StorageClient: realClient,
-		WaitGroup:     wg,
-		JobStore: jobStore,
-	}
+		realClient,
+		wg,
+		jobStore,
+	)
 
 	pool.Start()
 
-	handler := &handlers.Handler{
-		Pool:          pool,
-		StorageClient: realClient,
-		Env: &config.Env{
+	handler := handlers.NewHandler(
+		pool,
+		realClient,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-	}
+	)
+	
 	uploadHandler := handler.UploadHandler()
 	uploadHandler.ServeHTTP(rec, req)
 

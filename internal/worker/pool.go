@@ -33,6 +33,24 @@ type WorkerPoolInterface interface {
 	GetJobStatus(jobID string) job.JobStatus
 }
 
+func NewWorkerPool(
+	queue *queue.Queue,
+	workerCount int,
+	env *config.Env,
+	storageClient storage.ObjectStore,
+	waitGroup *sync.WaitGroup,
+	jobStore *job.JobStore,
+) *WorkerPool {
+	return &WorkerPool{
+		Queue: queue,
+		WorkerCount: workerCount,
+		Env: env,
+		StorageClient: storageClient,
+		WaitGroup: waitGroup,
+		JobStore: jobStore,
+	}
+}
+
 func (wp *WorkerPool) GetQueue() *queue.Queue {
 	return wp.Queue
 }

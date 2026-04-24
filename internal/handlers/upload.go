@@ -3,9 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"time"
-	
-	// "fmt"
+
 	"log"
 	"media_processing_pipeline/internal/helpers"
 	"media_processing_pipeline/internal/job"
@@ -18,9 +16,9 @@ import (
 )
 
 type UploadResponse struct {
-	VideoID string `json:"video_id"`
-	JobID   string `json:"job_id"`
-	Status  job.JobStatus
+	VideoID string        `json:"video_id"`
+	JobID   string        `json:"job_id"`
+	Status  job.JobStatus `json:"status"`
 }
 
 func (h *Handler) UploadHandler() http.HandlerFunc {
@@ -73,14 +71,12 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 			"video_id": videoID,
 		}
 
-		j := &job.Job{
-			ID: uuid.New().String(),
-			Type: job.JobTypeTranscoding,
-			Payload: payload,
-			Status: job.JobStatusPending,
-			LastError: "",
-			CreatedAt: time.Now(),
-		}
+		j := job.NewJob(
+			uuid.New().String(),
+			job.JobTypeTranscoding,
+			payload,
+			job.JobStatusPending,
+		)
 
 		h.Pool.Submit(j)
 
@@ -92,8 +88,8 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 
 		json.NewEncoder(w).Encode(UploadResponse{
 			VideoID: videoID,
-			JobID: j.ID,
-			Status: status, 
-		});
+			JobID:   j.ID,
+			Status:  status,
+		})
 	}
 }
