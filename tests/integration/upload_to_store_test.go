@@ -7,7 +7,9 @@ import (
 	"io"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/job"
+	"media_processing_pipeline/internal/queue"
+
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -20,16 +22,22 @@ import (
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
-type MockWorkerPool struct{}
+type MockJobStore struct {
 
-func (mwp *MockWorkerPool) Start()              {}
-func (mwp *MockWorkerPool) Submit(job jobs.Job) {}
-func (mwp *MockWorkerPool) GetQueue() chan jobs.Job {return nil}
-
-type UploadResponse struct {
-	VideoID  string `json:"video_id"`
 }
 
+func (mjs *MockJobStore) GetStatus(jobID string) job.JobStatus { return job.JobStatusPending }
+
+type MockWorkerPool struct{
+	Queue *queue.Queue
+	JobStore *MockJobStore
+}
+
+func (mwp *MockWorkerPool) Start() {}
+
+func (mwp *MockWorkerPool) Submit(job *job.Job) {}
+func (mwp *MockWorkerPool) GetQueue() *queue.Queue { return mwp.Queue }
+func (mwp *MockWorkerPool) GetJobStatus(jobID string) job.JobStatus { return mwp.JobStore.GetStatus(jobID) }
 
 func TestUploadFakeFileToStore(t *testing.T) {
 
@@ -77,7 +85,11 @@ func TestUploadFakeFileToStore(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 
-	mockPool := &MockWorkerPool{}
+	mockJobStore := &MockJobStore{}
+
+	mockPool := &MockWorkerPool{
+		JobStore: mockJobStore,
+	}
 
 	mockPool.Start()
 
@@ -97,7 +109,7 @@ func TestUploadFakeFileToStore(t *testing.T) {
 	}
 
 	responseBody := rec.Body.Bytes()
-	jsonResponse := &UploadResponse{}
+	jsonResponse := &handlers.UploadResponse{}
 	
 	err = json.Unmarshal(responseBody, jsonResponse)
 	if err != nil {
@@ -189,7 +201,7 @@ func TestUploadRealFileToStore(t *testing.T) {
 	}
 
 	responseBody := rec.Body.Bytes()
-	jsonResponse := &UploadResponse{}
+	jsonResponse := &handlers.UploadResponse{}
 	
 	err = json.Unmarshal(responseBody, jsonResponse)
 	if err != nil {

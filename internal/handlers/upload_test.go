@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"io"
 	"media_processing_pipeline/internal/config"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/job"
+	"media_processing_pipeline/internal/queue"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -39,16 +40,16 @@ func (m *MockStore) GetObject(
 	return nil, nil
 }
 
-type MockWorkerPool struct{}
+
+type MockWorkerPool struct{
+	JobStore *job.JobStore
+}
 
 func (mwp *MockWorkerPool) Start() {}
 
-func (mwp *MockWorkerPool) Submit(job jobs.Job) {}
-func (mwp *MockWorkerPool) GetQueue() chan jobs.Job { return nil }
-
-type UploadResponse struct {
-	VideoID  string `json:"video_id"`
-}
+func (mwp *MockWorkerPool) Submit(job *job.Job) {}
+func (mwp *MockWorkerPool) GetQueue() *queue.Queue { return nil }
+func (mwp *MockWorkerPool) GetJobStatus(jobID string) job.JobStatus { return job.JobStatusPending }
 
 func TestUploadHandler(t *testing.T) {
 
@@ -87,7 +88,10 @@ func TestUploadHandler(t *testing.T) {
 	mockClient := &MockStore{}
 	// run the handler by passing DIs minio client and bucket name
 	// queue := queue.InitQueue(10)
-	mockPool := &MockWorkerPool{}
+
+
+	mockPool := &MockWorkerPool{
+	}
 
 	mockPool.Start()
 
@@ -114,7 +118,7 @@ func TestUploadHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse json: %s", err)
 	}
-
+ 
 	if jsonResponse.VideoID == "" {
 		t.Errorf("Expected video ID, got empty string")
 	}

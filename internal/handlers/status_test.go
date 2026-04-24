@@ -4,80 +4,98 @@ import (
 	"encoding/json"
 	"fmt"
 	"media_processing_pipeline/internal/config"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/helpers"
+	"media_processing_pipeline/internal/job"
+	"media_processing_pipeline/internal/queue"
+	"media_processing_pipeline/internal/worker"
 	"net/http/httptest"
 	"sync"
 	"testing"
 )
 
-type JsonResponse struct {
-	JobID  string `json:"job_id"`
-	Status string `json:"status"`
-}
-
 func TestSetAndGetStatus(t *testing.T) {
 
-	jobs.Jobs = make(map[string]jobs.JobStatus)
+	jobStore := job.NewJobStore()
 
-	jobID := "random-job-id"
+	j := &job.Job{
+		ID:     "random-job-id",
+		Status: job.JobStatusPending,
+	}
 
-	jobs.SetStatus(jobID, jobs.JobStatusPending)
+	jobStore.Create(j)
 
-	jobs.SetStatus(jobID, jobs.JobStatusProcessing)
+	jobStore.UpdateStatus(j.ID, job.JobStatusPending)
 
-	jobs.SetStatus(jobID, jobs.JobStatusCompleted)
+	jobStore.UpdateStatus(j.ID, job.JobStatusProcessing)
 
-	status := jobs.GetStatus(jobID)
+	jobStore.UpdateStatus(j.ID, job.JobStatusCompleted)
+
+	status := jobStore.GetStatus(j.ID)
 
 	t.Logf("status: %s", status)
 
-	if status != jobs.JobStatusCompleted {
-		t.Fatalf("expected status to be: %s, got %s", jobs.JobStatusCompleted, status)
+	if status != job.JobStatusCompleted {
+		t.Fatalf("expected status to be: %s, got %s", job.JobStatusCompleted, status)
 	}
 }
 
 func TestGetStatusOfUnknownJob(t *testing.T) {
 
-	jobs.Jobs = make(map[string]jobs.JobStatus)
+	jobStore := job.NewJobStore()
 
 	jobID := "random-job-id"
+	// do not create job
+	// jobStore.Create(j)
 
-	status := jobs.GetStatus(jobID)
+	status := jobStore.GetStatus(jobID)
 
 	t.Logf("status: %s", status)
 
-	expected_status := ""
-	if status != "" {
-		t.Fatalf("expected %s, got: %s",expected_status, status)
+	expected_status := "unknown"
+	if status != "unknown" {
+		t.Fatalf("expected %s, got: %s", expected_status, status)
 	}
 }
 
 func TestStatusHandlerWithValidJob(t *testing.T) {
 
-	jobs.Jobs = make(map[string]jobs.JobStatus)
+	jobStore := job.NewJobStore()
 
-	jobID := "random-job-id"
+	j := &job.Job{
+		ID: "random-job-id",
+	}
 
-	jobs.SetStatus(jobID, jobs.JobStatusCompleted)
+	jobStore.Create(j)
 
-	status := jobs.GetStatus(jobID)
+	jobStore.UpdateStatus(j.ID, job.JobStatusCompleted)
+
+	status := jobStore.GetStatus(j.ID)
 
 	t.Logf("status: %s", status)
 
 	req := httptest.NewRequest("GET", "/api/status/{job_id}", nil)
 
-	req.SetPathValue("job_id", jobID)
+	req.SetPathValue("job_id", j.ID)
 
 	rec := httptest.NewRecorder()
 
 	mockClient := &MockStore{}
 
-	mockPool := &MockWorkerPool{}
+	queue := queue.NewQueue(10)
 
-	mockPool.Start()
+	pool := &worker.WorkerPool{
+		Queue:         queue,
+		WorkerCount:   3,
+		Env:           &config.Env{},
+		StorageClient: mockClient,
+		WaitGroup:     &sync.WaitGroup{},
+		JobStore:      jobStore,
+	}
+
+	pool.Start()
 
 	handler := &Handler{
-		Pool:          mockPool,
+		Pool:          pool,
 		StorageClient: mockClient,
 		Env:           &config.Env{},
 	}
@@ -88,7 +106,7 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 
 	t.Logf("response body: %s", string(responseBody))
 
-	jsonResponse := &JsonResponse{}
+	jsonResponse := &StatusResponse{}
 
 	err := json.Unmarshal(responseBody, jsonResponse)
 	if err != nil {
@@ -96,97 +114,113 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 	}
 
 	if jsonResponse.Status != "completed" {
-		t.Fatalf("Expected status to be: %s, got: %s", jobs.JobStatusCompleted, jsonResponse.Status)
+		t.Fatalf("Expected status to be: %s, got: %s", job.JobStatusCompleted, jsonResponse.Status)
 	}
 
-	if jsonResponse.JobID != jobID {
-		t.Fatalf("Expected jobID to be: %s, got: %s", jobID, jsonResponse.JobID)
+	if jsonResponse.JobID != j.ID {
+		t.Fatalf("Expected jobID to be: %s, got: %s", j.ID, jsonResponse.JobID)
 	}
-
 }
 
 func TestStatusHandlerWithInvalidJob(t *testing.T) {
-	
-	jobs.Jobs = make(map[string]jobs.JobStatus)
-	
-	jobID := "invalid-job-id"
 
-	// do not set status
-	// jobs.SetStatus(jobID, jobs.JobStatusCompleted)
+	jobStore := job.NewJobStore()
+
+	j := &job.Job{
+		ID: "random-job-id",
+	}
+	// do not create job
+	// jobStore.Create(j)
+
+	// jobStore.UpdateStatus(j.ID, job.JobStatusCompleted)
 
 	req := httptest.NewRequest("GET", "/api/status/{job_id}", nil)
 
-	req.SetPathValue("job_id", jobID)
+	req.SetPathValue("job_id", j.ID)
 
 	rec := httptest.NewRecorder()
 
 	mockClient := &MockStore{}
 
-	mockPool := &MockWorkerPool{}
+	queue := queue.NewQueue(10)
 
-	mockPool.Start()
+	pool := &worker.WorkerPool{
+		Queue:         queue,
+		WorkerCount:   3,
+		Env:           &config.Env{},
+		StorageClient: mockClient,
+		WaitGroup:     &sync.WaitGroup{},
+		JobStore:      jobStore,
+	}
+
+	pool.Start()
 
 	handler := &Handler{
-		Pool:          mockPool,
+		Pool:          pool,
 		StorageClient: mockClient,
 		Env:           &config.Env{},
 	}
 
 	handler.StatusHandler(rec, req)
 
-	// http.Error automatically adds "\n" in the last of the msg!
-	responseBody := rec.Body.String() // "Job invalid-job-id not found\n"
-	// that is why we need to add "\n" at last
-	// otherwise it will throw err because in go: "text" == "text\n" is false
-	errTxt := fmt.Sprintf("Job %s not found\n", jobID)
-	
-	t.Logf("responseBody: %s", responseBody)
-	t.Logf("errTxt: %s", errTxt)
+	responseBody := rec.Body.Bytes()
+
+	jsonResponse := &helpers.ErrorResponse{}
+
+	err := json.Unmarshal(responseBody, jsonResponse)
+	if err != nil {
+		t.Fatalf("Error parsing json: %s", err)
+	}
 
 	if rec.Code != 404 {
 		t.Fatalf("Expected status code to be: %d, got: %d", 404, rec.Code)
 	}
 
-	if errTxt != responseBody {
-		t.Fatalf("Expected response body to be: %s, got: %s", errTxt, responseBody)
+	msg := fmt.Sprintf("Job %s not found", j.ID)
+	if jsonResponse.Message != msg {
+		t.Fatalf("Expected msg to be: %s, got: %s", msg, jsonResponse.Message)
 	}
 
 }
 
 func TestStatusConcurrentAccess(t *testing.T) {
 	// reset global test
-	jobs.Jobs = make(map[string]jobs.JobStatus)
+	jobStore := job.NewJobStore()
 
-	jobID := "test-job"
+	j := &job.Job{
+		ID: "random-job-id",
+	}
+
+	jobStore.Create(j)
 
 	var wg sync.WaitGroup
 
 	numRoutines := 100
 
-	statuses := []jobs.JobStatus{
-		jobs.JobStatusPending,
-		jobs.JobStatusProcessing,
-		jobs.JobStatusCompleted,
-		jobs.JobStatusFailed,
+	statuses := []job.JobStatus{
+		job.JobStatusPending,
+		job.JobStatusProcessing,
+		job.JobStatusCompleted,
+		job.JobStatusFailed,
 	}
 
 	for i := 0; i < numRoutines; i++ {
 		wg.Add(1)
 
-		go func (i int)  {
+		go func(i int) {
 			defer wg.Done()
 
-			status := statuses[i % len(statuses)]
+			status := statuses[i%len(statuses)]
 
-			jobs.SetStatus(jobID, status)
+			jobStore.UpdateStatus(j.ID, status)
 
-			_ = jobs.GetStatus(jobID)
+			_ = jobStore.GetStatus(j.ID)
 		}(i)
 	}
 
 	wg.Wait()
 
-	finalStatus := jobs.GetStatus(jobID)
+	finalStatus := jobStore.GetStatus(j.ID)
 	if finalStatus == "" {
 		t.Errorf("Expected some status, go empty")
 	}
