@@ -3,15 +3,25 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"time"
+	
 	// "fmt"
 	"log"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/helpers"
+	"media_processing_pipeline/internal/job"
+
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )
+
+type UploadResponse struct {
+	VideoID string `json:"video_id"`
+	JobID   string `json:"job_id"`
+	Status  job.JobStatus
+}
 
 func (h *Handler) UploadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -21,14 +31,16 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 		// it takes one arguement, maxMemory
 		err := r.ParseMultipartForm(maxMemory)
 		if err != nil {
-			http.Error(w, "Error parsing multipart form", 400)
+			msg := "Error parsing multipart form data: " + err.Error()
+			helpers.SendJSONError(w, msg, http.StatusBadRequest)
 			return
 		}
 
 		// after parsing, now functions like r.FormValue() and r.FormFile() can be used to access the form data
 		file, header, err := r.FormFile("file")
 		if err != nil {
-			http.Error(w, "Error accessing file", 400)
+			msg := "Error accessing video file: " + err.Error()
+			helpers.SendJSONError(w, msg, http.StatusBadRequest)
 			return
 		}
 
@@ -50,24 +62,38 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 		log.Printf("Upload size: %d", info.Size)
 
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			msg := "Error uploading video file: " + err.Error()
+			helpers.SendJSONError(w, msg, http.StatusInternalServerError)
 			return
 		}
 
 		videoID := strings.Split(objectName, ".")[0]
 
-		job := jobs.Job{
-			VideoID: videoID,
-			FileKey: objectName,
+		payload := map[string]string{
+			"video_id": videoID,
 		}
 
-		h.Pool.Submit(job)
+		j := &job.Job{
+			ID: uuid.New().String(),
+			Type: job.JobTypeTranscoding,
+			Payload: payload,
+			Status: job.JobStatusPending,
+			LastError: "",
+			CreatedAt: time.Now(),
+		}
+
+		h.Pool.Submit(j)
+
+		status := h.Pool.GetJobStatus(j.ID)
 
 		log.Printf("Job queued: %s\n", videoID)
 
-		json.NewEncoder(w).Encode(map[string]string{
-			"video_id": videoID, 
+		w.Header().Set("Content-Type", "application/json")
+
+		json.NewEncoder(w).Encode(UploadResponse{
+			VideoID: videoID,
+			JobID: j.ID,
+			Status: status, 
 		});
 	}
-
 }

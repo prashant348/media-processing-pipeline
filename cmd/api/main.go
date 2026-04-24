@@ -5,11 +5,13 @@ import (
 	"log"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
+	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/storage"
 	"media_processing_pipeline/internal/worker"
 	"net/http"
 	"sync"
+
 	"github.com/rs/cors"
 )
 
@@ -25,8 +27,10 @@ func main() {
 	storage.InitMinIO(env)
 	// acccess the initialized minio client
 	client := storage.MinioClient
-	// initialize and access queue
-	queue := queue.InitQueue(100)
+	// create job store
+	jobStore := job.NewJobStore()
+	// create jobs queue
+	queue := queue.NewQueue(100)
 	// create wait group
 	wg := &sync.WaitGroup{}
 	// create worker pool
@@ -36,8 +40,8 @@ func main() {
 		Env:           env,
 		StorageClient: client,
 		WaitGroup:     wg,
+		JobStore: jobStore,
 	}
-
 	// start the worker pool
 	pool.Start()
 
@@ -47,8 +51,6 @@ func main() {
 		Env:           env,
 		StorageClient: client,
 	}
-
-	fs := http.FileServer(http.Dir("./output"))
 
 	mux := http.NewServeMux()
 
@@ -61,8 +63,7 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /", handler.HomeHandler)
-	mux.Handle("GET /api/stream/", c.Handler(http.StripPrefix("/api/stream/", fs)))
-	// pass minio client and bucket name as Dependency injection to upload handler
+	mux.HandleFunc("GET /api/stream/{video_id}/index.m3u8", handler.StreamHandler)
 	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
 	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
 

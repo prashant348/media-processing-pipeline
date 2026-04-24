@@ -10,6 +10,7 @@ type Env struct {
 	MinioRootUser string
 	MinioRootPass string
 	MinioBucketName string
+	OutputDir string
 }
 
 func InitEnv(filenames ...string) error {
@@ -26,5 +27,6 @@ func LoadEnv() *Env {
 		MinioRootUser: os.Getenv("MINIO_ROOT_USER"),
 		MinioRootPass: os.Getenv("MINIO_ROOT_PASSWORD"),
 		MinioBucketName: os.Getenv("MINIO_BUCKET_NAME"),
+		OutputDir: os.Getenv("OUTPUT_DIR"),
 	}
 }

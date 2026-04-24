@@ -7,7 +7,8 @@ import (
 	"io"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/job"
+
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
 	"mime/multipart"
@@ -15,7 +16,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	// "strings"
 	"sync"
 	"testing"
 
@@ -24,9 +24,6 @@ import (
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
-type UploadResponse struct {
-	VideoID  string `json:"video_id"`
-}
 
 func TestUploadToProcessPipeline(t *testing.T) {
 
@@ -83,7 +80,8 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 
-	queue := queue.InitQueue(10)
+	jobStore := job.NewJobStore()
+	queue := queue.NewQueue(10)
 	wg := &sync.WaitGroup{}
 	pool := &worker.WorkerPool{
 		Queue:       queue,
@@ -93,6 +91,7 @@ func TestUploadToProcessPipeline(t *testing.T) {
 		},
 		StorageClient: realClient,
 		WaitGroup:     wg,
+		JobStore: jobStore,
 	}
 
 	pool.Start()
@@ -109,7 +108,7 @@ func TestUploadToProcessPipeline(t *testing.T) {
 
 	httpResponse := rec.Body.Bytes()
 
-	jsonResponse := &UploadResponse{}
+	jsonResponse := &handlers.UploadResponse{}
 	
 	err = json.Unmarshal(httpResponse, jsonResponse)
 	if err != nil {
@@ -121,12 +120,11 @@ func TestUploadToProcessPipeline(t *testing.T) {
 	}
 
 	videoID := jsonResponse.VideoID
-	jobID := videoID
+	jobID := jsonResponse.JobID
+	status := jsonResponse.Status
 
-	status := jobs.GetStatus(jobID)
-
-	if status != jobs.JobStatusPending && status != jobs.JobStatusProcessing {
-		t.Errorf("Expected status to be %s or %s, got %s", jobs.JobStatusPending, jobs.JobStatusProcessing, status)
+	if status != job.JobStatusPending && status != job.JobStatusProcessing {
+		t.Errorf("Expected status to be %s or %s, got %s", job.JobStatusPending, job.JobStatusProcessing, status)
 	}
 
 	// define output path
@@ -144,9 +142,9 @@ func TestUploadToProcessPipeline(t *testing.T) {
 		t.Fatal("HLS playlist not generated")
 	}
 
-	status = jobs.GetStatus(jobID)
+	status = jobStore.GetStatus(jobID)
 
-	if status != jobs.JobStatusCompleted {
-		t.Errorf("Exected status to be %s, got %s", jobs.JobStatusCompleted, status)
+	if status != job.JobStatusCompleted {
+		t.Errorf("Exected status to be %s, got %s", job.JobStatusCompleted, status)
 	}
 }
