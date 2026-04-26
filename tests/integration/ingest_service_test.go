@@ -39,7 +39,7 @@ func (mwp *MockWorkerPool) Submit(job *job.Job) {}
 func (mwp *MockWorkerPool) GetQueue() *queue.Queue { return mwp.Queue }
 func (mwp *MockWorkerPool) GetJobStatus(jobID string) job.JobStatus { return mwp.JobStore.GetStatus(jobID) }
 
-func TestUploadFakeFileToStore(t *testing.T) {
+func TestIngestService(t *testing.T) {
 
 	// create top level background context
 	ctx := context.Background()
@@ -122,7 +122,7 @@ func TestUploadFakeFileToStore(t *testing.T) {
 
 }
 
-func TestUploadRealFileToStore(t *testing.T) {
+func TestIngestServiceWithRealFile(t *testing.T) {
 	// create top level background context
 	ctx := context.Background()
 

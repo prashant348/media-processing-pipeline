@@ -17,7 +17,7 @@ import (
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
-func TestFFmpegProcess(t *testing.T) {
+func TestTranscodingJob(t *testing.T) {
 	// create top level background context
 	ctx := context.Background()
 

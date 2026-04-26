@@ -25,7 +25,7 @@ import (
 )
 
 
-func TestUploadToProcessPipeline(t *testing.T) {
+func TestMediaProcessingPipeline(t *testing.T) {
 
 	ctx := context.Background()
 
