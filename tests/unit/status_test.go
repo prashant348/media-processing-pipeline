@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/handlers"
 	"media_processing_pipeline/internal/helpers"
 	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
@@ -94,7 +95,7 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 
 	pool.Start()
 
-	handler := &Handler{
+	handler := &handlers.Handler{
 		Pool:          pool,
 		StorageClient: mockClient,
 		Env:           &config.Env{},
@@ -106,7 +107,7 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 
 	t.Logf("response body: %s", string(responseBody))
 
-	jsonResponse := &StatusResponse{}
+	jsonResponse := &handlers.StatusResponse{}
 
 	err := json.Unmarshal(responseBody, jsonResponse)
 	if err != nil {
@@ -155,7 +156,7 @@ func TestStatusHandlerWithInvalidJob(t *testing.T) {
 
 	pool.Start()
 
-	handler := &Handler{
+	handler := &handlers.Handler{
 		Pool:          pool,
 		StorageClient: mockClient,
 		Env:           &config.Env{},

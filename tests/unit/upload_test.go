@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"media_processing_pipeline/internal/config"
+	"media_processing_pipeline/internal/handlers"
 	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
 	"mime/multipart"
@@ -95,7 +96,7 @@ func TestUploadHandler(t *testing.T) {
 
 	mockPool.Start()
 
-	handler := &Handler{
+	handler := &handlers.Handler{
 		Pool:          mockPool,
 		StorageClient: mockClient,
 		Env: &config.Env{
@@ -112,7 +113,7 @@ func TestUploadHandler(t *testing.T) {
 	}
 
 	responseBody := rec.Body.Bytes()
-	jsonResponse := &UploadResponse{}
+	jsonResponse := &handlers.UploadResponse{}
 	
 	err = json.Unmarshal(responseBody, jsonResponse)
 	if err != nil {
