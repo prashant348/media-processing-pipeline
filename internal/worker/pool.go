@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -40,7 +41,12 @@ func NewWorkerPool(
 	storageClient storage.ObjectStore,
 	waitGroup *sync.WaitGroup,
 	jobStore *job.JobStore,
-) *WorkerPool {
+) (*WorkerPool, error) {
+
+	if workerCount < 1 {
+		return nil, errors.New("Worker count can't be zero or negative!")
+	}
+
 	return &WorkerPool{
 		Queue: queue,
 		WorkerCount: workerCount,
@@ -48,7 +54,7 @@ func NewWorkerPool(
 		StorageClient: storageClient,
 		WaitGroup: waitGroup,
 		JobStore: jobStore,
-	}
+	}, nil
 }
 
 func (wp *WorkerPool) GetQueue() *queue.Queue {

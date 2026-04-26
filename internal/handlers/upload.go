@@ -72,7 +72,6 @@ func (h *Handler) UploadHandler() http.HandlerFunc {
 		}
 
 		j := job.NewJob(
-			uuid.New().String(),
 			job.JobTypeTranscoding,
 			payload,
 			job.JobStatusPending,

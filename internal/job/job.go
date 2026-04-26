@@ -3,6 +3,8 @@ package job
 import (
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Job struct {
@@ -37,13 +39,12 @@ type JobStore struct {
 }
 
 func NewJob(
-	id string,
 	jobType JobType,
 	payload Payload,
 	status JobStatus,
 ) *Job {
 	return &Job{
-		ID: id,
+		ID: uuid.New().String(),
 		Type: jobType,
 		Payload: payload,
 		Status: status,
