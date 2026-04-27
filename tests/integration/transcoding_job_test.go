@@ -123,7 +123,7 @@ func TestTranscodingJob(t *testing.T) {
 	)
 
 	// pass the job for ffmpeg processing
-	pool.TranscodingJob(1, job, pool.Env)
+	pool.TranscodingJob(1, job)
 
 	// wait for job to finish
 	pool.WaitGroup.Wait()

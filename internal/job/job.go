@@ -12,8 +12,12 @@ type Job struct {
 	Type      JobType   `json:"type"`
 	Payload   Payload   `json:"payload"`
 	Status    JobStatus `json:"status"`
-	LastError string    `json:"last_error"`
+	// job lifecycle timings
 	CreatedAt time.Time `json:"created_at"`
+	StartedAt time.Time `json:"started_at"`
+	FinishedAt time.Time `json:"updated_at"`
+	// error handling
+	LastError string    `json:"last_error"`
 }
 
 type JobStatus string
@@ -50,11 +54,21 @@ func NewJob(
 		Status: status,
 		LastError: "",
 		CreatedAt: time.Now(),
+		StartedAt: time.Time{},
+		FinishedAt: time.Time{},
 	}
 }
 
 func NewJobStore() *JobStore {
 	return &JobStore{Jobs: make(map[string]*Job)}
+}
+
+func (js *JobStore) Get(jobID string) (*Job, bool) {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
+	j, ok := js.Jobs[jobID]
+	return j, ok
 }
 
 func (js *JobStore) Create(job *Job) {
@@ -72,6 +86,20 @@ func (js *JobStore) UpdateStatus(
 	defer js.mu.Unlock()
 
 	js.Jobs[jobID].Status = status
+}
+
+func (js *JobStore) UpdateStartedAt(jobID string) {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
+	js.Jobs[jobID].StartedAt = time.Now()
+}
+
+func (js *JobStore) UpdateFinishedAt(jobID string) {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+
+	js.Jobs[jobID].FinishedAt = time.Now()
 }
 
 func (js *JobStore) GetStatus(jobID string) JobStatus {
