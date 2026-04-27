@@ -51,6 +51,7 @@ func (mwp *MockWorkerPool) Start() {}
 func (mwp *MockWorkerPool) Submit(job *job.Job) {}
 func (mwp *MockWorkerPool) GetQueue() *queue.Queue { return nil }
 func (mwp *MockWorkerPool) GetJobStatus(jobID string) job.JobStatus { return job.JobStatusPending }
+func (mwp *MockWorkerPool) GetJob(jobID string) (*job.Job, bool) { return mwp.JobStore.Get(jobID) }
 
 func TestUploadHandler(t *testing.T) {
 

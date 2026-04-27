@@ -32,6 +32,7 @@ type WorkerPoolInterface interface {
 	Submit(j *job.Job)
 	GetQueue() *queue.Queue
 	GetJobStatus(jobID string) job.JobStatus
+	GetJob(jobID string) (*job.Job, bool)
 }
 
 func NewWorkerPool(
@@ -65,6 +66,11 @@ func (wp *WorkerPool) GetJobStatus(jobID string) job.JobStatus {
 	return wp.JobStore.GetStatus(jobID)
 }
 
+func (wp *WorkerPool) GetJob(jobID string) (*job.Job, bool) {
+	j, ok := wp.JobStore.Get(jobID)
+	return j, ok
+}
+
 func (wp *WorkerPool) Start() {
 	for i := range wp.WorkerCount {
 		go wp.worker(i + 1)
@@ -77,16 +83,19 @@ func (wp *WorkerPool) worker(id int) {
 		func() {
 			defer wp.WaitGroup.Done()
 
+			wp.JobStore.UpdateStartedAt(j.ID)
 			wp.JobStore.UpdateStatus(j.ID, job.JobStatusProcessing)
 
-			err, _ := wp.TranscodingJob(id, j, wp.Env)
+			err, _ := wp.TranscodingJob(id, j)
 
 			if err != nil {
 				log.Printf("Worker %d: Error processing job %s: %v", id, j.ID, err)
-				wp.JobStore.SetError(j.ID, err.Error())
+				wp.JobStore.UpdateFinishedAt(j.ID)
 				wp.JobStore.UpdateStatus(j.ID, job.JobStatusFailed)
+				wp.JobStore.SetError(j.ID, err.Error())
 			} else {
 				log.Printf("Worker %d: Job %s completed", id, j.ID)
+				wp.JobStore.UpdateFinishedAt(j.ID)
 				wp.JobStore.UpdateStatus(j.ID, job.JobStatusCompleted)
 			}
 		}()
@@ -107,7 +116,6 @@ func (wp *WorkerPool) Submit(j *job.Job) {
 func (wp *WorkerPool) TranscodingJob(
 	workerID int,
 	j *job.Job,
-	env *config.Env,
 ) (error, bool) {
 	log.Printf("Worker %d picked job: %s\n", workerID, j.ID)
 
@@ -123,7 +131,7 @@ func (wp *WorkerPool) TranscodingJob(
 
 	obj, err := wp.StorageClient.GetObject(
 		context.Background(),
-		env.MinioBucketName,
+		wp.Env.MinioBucketName,
 		objectName,
 		minio.GetObjectOptions{},
 	)

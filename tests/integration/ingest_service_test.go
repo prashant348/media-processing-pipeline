@@ -27,6 +27,7 @@ type MockJobStore struct {
 }
 
 func (mjs *MockJobStore) GetStatus(jobID string) job.JobStatus { return job.JobStatusPending }
+func (mjs *MockJobStore) Get(jobID string) (*job.Job, bool) { return nil, false }
 
 type MockWorkerPool struct{
 	Queue *queue.Queue
@@ -34,7 +35,7 @@ type MockWorkerPool struct{
 }
 
 func (mwp *MockWorkerPool) Start() {}
-
+func (mwp *MockWorkerPool) GetJob(jobID string) (*job.Job, bool) { return mwp.JobStore.Get(jobID) }
 func (mwp *MockWorkerPool) Submit(job *job.Job) {}
 func (mwp *MockWorkerPool) GetQueue() *queue.Queue { return mwp.Queue }
 func (mwp *MockWorkerPool) GetJobStatus(jobID string) job.JobStatus { return mwp.JobStore.GetStatus(jobID) }
