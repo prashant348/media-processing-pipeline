@@ -1,16 +1,18 @@
 package config
 
 import (
-	"os"
 	"github.com/joho/godotenv"
+	"os"
 )
 
 type Env struct {
-	MinioEndpoint string
-	MinioRootUser string
-	MinioRootPass string
+	MinioEndpoint   string
+	MinioRootUser   string
+	MinioRootPass   string
 	MinioBucketName string
-	OutputDir string
+	OutputDir       string
+	BaseUrl         string
+	ClientBaseUrl   string
 }
 
 func InitEnv(filenames ...string) error {
@@ -19,14 +21,16 @@ func InitEnv(filenames ...string) error {
 	}
 
 	return nil
-} 
+}
 
 func LoadEnv() *Env {
 	return &Env{
-		MinioEndpoint: os.Getenv("MINIO_ENDPOINT"),
-		MinioRootUser: os.Getenv("MINIO_ROOT_USER"),
-		MinioRootPass: os.Getenv("MINIO_ROOT_PASSWORD"),
+		MinioEndpoint:   os.Getenv("MINIO_ENDPOINT"),
+		MinioRootUser:   os.Getenv("MINIO_ROOT_USER"),
+		MinioRootPass:   os.Getenv("MINIO_ROOT_PASSWORD"),
 		MinioBucketName: os.Getenv("MINIO_BUCKET_NAME"),
-		OutputDir: os.Getenv("OUTPUT_DIR"),
+		OutputDir:       os.Getenv("OUTPUT_DIR"),
+		BaseUrl:         os.Getenv("BASE_URL"),
+		ClientBaseUrl:   os.Getenv("CLIENT_BASE_URL"),
 	}
 }

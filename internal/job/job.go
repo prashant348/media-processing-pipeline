@@ -8,16 +8,16 @@ import (
 )
 
 type Job struct {
-	ID        string    `json:"id"`
-	Type      JobType   `json:"type"`
-	Payload   Payload   `json:"payload"`
-	Status    JobStatus `json:"status"`
-	// job lifecycle timings
-	CreatedAt time.Time `json:"created_at"`
-	StartedAt time.Time `json:"started_at"`
-	FinishedAt time.Time `json:"updated_at"`
-	// error handling
-	LastError string    `json:"last_error"`
+	ID         string    `json:"id"`
+	Type       JobType   `json:"type"`
+	Payload    Payload   `json:"payload"`
+	Status     JobStatus `json:"status"`
+
+	CreatedAt  time.Time `json:"created_at"`
+	StartedAt  time.Time `json:"started_at"`
+	FinishedAt time.Time `json:"finished_at"`
+
+	LastError  string    `json:"last_error"`
 }
 
 type JobStatus string
@@ -48,13 +48,13 @@ func NewJob(
 	status JobStatus,
 ) *Job {
 	return &Job{
-		ID: uuid.New().String(),
-		Type: jobType,
-		Payload: payload,
-		Status: status,
-		LastError: "",
-		CreatedAt: time.Now(),
-		StartedAt: time.Time{},
+		ID:         uuid.New().String(),
+		Type:       jobType,
+		Payload:    payload,
+		Status:     status,
+		LastError:  "",
+		CreatedAt:  time.Now(),
+		StartedAt:  time.Time{},
 		FinishedAt: time.Time{},
 	}
 }

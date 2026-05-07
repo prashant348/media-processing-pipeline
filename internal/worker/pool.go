@@ -33,6 +33,7 @@ type WorkerPoolInterface interface {
 	GetQueue() *queue.Queue
 	GetJobStatus(jobID string) job.JobStatus
 	GetJob(jobID string) (*job.Job, bool)
+	GetJobStore() *job.JobStore
 }
 
 func NewWorkerPool(
@@ -49,12 +50,12 @@ func NewWorkerPool(
 	}
 
 	return &WorkerPool{
-		Queue: queue,
-		WorkerCount: workerCount,
-		Env: env,
+		Queue:         queue,
+		WorkerCount:   workerCount,
+		Env:           env,
 		StorageClient: storageClient,
-		WaitGroup: waitGroup,
-		JobStore: jobStore,
+		WaitGroup:     waitGroup,
+		JobStore:      jobStore,
 	}, nil
 }
 
@@ -69,6 +70,10 @@ func (wp *WorkerPool) GetJobStatus(jobID string) job.JobStatus {
 func (wp *WorkerPool) GetJob(jobID string) (*job.Job, bool) {
 	j, ok := wp.JobStore.Get(jobID)
 	return j, ok
+}
+
+func (wp *WorkerPool) GetJobStore() *job.JobStore {
+	return wp.JobStore
 }
 
 func (wp *WorkerPool) Start() {
@@ -127,7 +132,7 @@ func (wp *WorkerPool) TranscodingJob(
 	os.MkdirAll(inputDir, os.ModePerm)
 	os.MkdirAll(outputDir, os.ModePerm)
 
-	objectName := j.Payload["video_id"] + ".mp4" 
+	objectName := j.Payload["video_id"] + ".mp4"
 
 	obj, err := wp.StorageClient.GetObject(
 		context.Background(),
@@ -158,7 +163,9 @@ func (wp *WorkerPool) TranscodingJob(
 	cmd := exec.Command(
 		"ffmpeg",        // ffmpeg cmd
 		"-i", inputPath, // input file path
-		"-codec", "copy", // direct copy streams
+		"-c:v", "libx264", // Video codec: H.264
+		"-preset", "veryfast", // Processing speed vs quality balance
+		"-c:a", "aac", // Audio codec: AAC
 		"-start_number", "0", // segmentation numbers starts with 0
 		"-hls_time", "5", //
 		"-hls_list_size", "0", //
@@ -177,6 +184,6 @@ func (wp *WorkerPool) TranscodingJob(
 	}
 
 	log.Printf("Worker %d finished processing: %s\n", workerID, j.Payload["video_id"])
-
+	defer os.Remove(inputDir)
 	return nil, true
 }

@@ -55,7 +55,7 @@ func TestMediaProcessingPipeline(t *testing.T) {
 
 	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
 
-	videoFilePath := filepath.Join("..", "testdata", "tiny_test_video.mp4")
+	videoFilePath := filepath.Join("..", "testdata", "test_video.mp4")
 
 	t.Logf("video file path: %s", videoFilePath)
 
@@ -67,7 +67,7 @@ func TestMediaProcessingPipeline(t *testing.T) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, _ := writer.CreateFormFile("file", "tiny_test_video.mp4")
+	part, _ := writer.CreateFormFile("file", "test_video.mp4")
 
 	_, err = io.Copy(part, file)
 	if err != nil {
@@ -104,25 +104,25 @@ func TestMediaProcessingPipeline(t *testing.T) {
 		},
 	)
 	
-	uploadHandler := handler.UploadHandler()
-	uploadHandler.ServeHTTP(rec, req)
+	uploadHandler := handler.UploadHandler
+	uploadHandler(rec, req)
 
 	httpResponse := rec.Body.Bytes()
 
-	jsonResponse := &handlers.UploadResponse{}
+	uploadResponse := &handlers.UploadResponse{}
 	
-	err = json.Unmarshal(httpResponse, jsonResponse)
+	err = json.Unmarshal(httpResponse, uploadResponse)
 	if err != nil {
 		t.Fatalf("Failed to parse json: %s", err)
 	}
 
-	if jsonResponse.VideoID == "" {
+	if uploadResponse.Data.VideoID == "" {
 		t.Errorf("Expected video ID, got empty string")
 	}
 
-	videoID := jsonResponse.VideoID
-	jobID := jsonResponse.JobID
-	status := jsonResponse.Status
+	videoID := uploadResponse.Data.VideoID
+	jobID := uploadResponse.Data.JobID
+	status := uploadResponse.Data.Status
 
 	if status != job.JobStatusPending && status != job.JobStatusProcessing {
 		t.Errorf("Expected status to be %s or %s, got %s", job.JobStatusPending, job.JobStatusProcessing, status)

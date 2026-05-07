@@ -63,9 +63,11 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /", handler.HomeHandler)
-	mux.HandleFunc("GET /api/stream/{video_id}/index.m3u8", handler.StreamHandler)
-	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
+	mux.HandleFunc("GET /api/stream/{video_id}/{filename...}", handler.StreamHandler)
+	mux.HandleFunc("POST /api/upload", handler.UploadHandler)
 	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
+	mux.HandleFunc("GET /api/job/{job_id}", handler.JobHandler)
+	mux.HandleFunc("GET /api/jobs", handler.JobsHandler)
 
 	fmt.Printf("Server is running http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", c.Handler(mux)))

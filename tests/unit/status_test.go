@@ -114,12 +114,12 @@ func TestStatusHandlerWithValidJob(t *testing.T) {
 		t.Fatalf("Failed to pass json: %s", err)
 	}
 
-	if jsonResponse.Status != "completed" {
-		t.Fatalf("Expected status to be: %s, got: %s", job.JobStatusCompleted, jsonResponse.Status)
+	if jsonResponse.Data.Status != "completed" {
+		t.Fatalf("Expected status to be: %s, got: %s", job.JobStatusCompleted, jsonResponse.Data.Status)
 	}
 
-	if jsonResponse.JobID != j.ID {
-		t.Fatalf("Expected jobID to be: %s, got: %s", j.ID, jsonResponse.JobID)
+	if jsonResponse.Data.JobID != j.ID {
+		t.Fatalf("Expected jobID to be: %s, got: %s", j.ID, jsonResponse.Data.JobID)
 	}
 }
 
@@ -178,8 +178,8 @@ func TestStatusHandlerWithInvalidJob(t *testing.T) {
 	}
 
 	msg := fmt.Sprintf("Job %s not found", j.ID)
-	if jsonResponse.Message != msg {
-		t.Fatalf("Expected msg to be: %s, got: %s", msg, jsonResponse.Message)
+	if jsonResponse.Data.Message != msg {
+		t.Fatalf("Expected msg to be: %s, got: %s", msg, jsonResponse.Data.Message)
 	}
 
 }
