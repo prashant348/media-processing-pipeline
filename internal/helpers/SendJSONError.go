@@ -6,9 +6,14 @@ import (
 )
 
 type ErrorResponse struct {
+	Success bool      `json:"success"`
+	Data    ErrorData `json:"data"`
+}
+
+type ErrorData struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
-	Code    int    `json:"status"`
+	Code    int    `json:"code"`
 }
 
 func SendJSONError(
@@ -19,8 +24,11 @@ func SendJSONError(
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(ErrorResponse{
-		Error:   http.StatusText(code),
-		Message: message,
-		Code:    code,
+		Success: false,
+		Data: ErrorData{
+			Error:   http.StatusText(code),
+			Message: message,
+			Code:    code,
+		},
 	})
 }

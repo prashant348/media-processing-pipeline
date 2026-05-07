@@ -52,7 +52,7 @@ func TestTranscodingJob(t *testing.T) {
 	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
 
 	// path to real video file for testing
-	videoFilePath := filepath.Join("..", "testdata", "tiny_test_video.mp4")
+	videoFilePath := filepath.Join("..", "testdata", "test_video.mp4")
 
 	// open video file
 	file, err := os.Open(videoFilePath)
