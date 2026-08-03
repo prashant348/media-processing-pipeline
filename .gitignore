@@ -1,0 +1,197 @@
+# =========================
+
+# 🔐 ENV & SECRETS
+
+# =========================
+
+.env
+.env.*
+!.env.example
+env.js
+
+# =========================
+
+# 🧠 OS FILES
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# 🧪 BUILD OUTPUTS (GO)
+
+# =========================
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+build/
+
+# =========================
+
+# 📦 GO MODULE CACHE (optional ignore)
+
+# =========================
+
+vendor/
+
+# =========================
+
+# 🧾 LOG FILES
+
+# =========================
+
+*.log
+logs/
+*.pid
+
+# =========================
+
+# 🧊 TEMP / CACHE
+
+# =========================
+
+tmp/
+temp/
+*.tmp
+*.cache
+
+# =========================
+
+# 🎬 MEDIA FILES (VERY IMPORTANT)
+
+# =========================
+
+# Raw uploads
+
+uploads/
+media/
+videos/
+output/
+*.mp4
+*.mkv
+*.avi
+*.mov
+!tests/testdata/*mp4
+
+# HLS output (future)
+
+*.m3u8
+**/output/**/*.ts
+
+# =========================
+
+# 🐳 DOCKER
+
+# =========================
+
+.dockerignore
+docker-compose.override.yml
+
+# =========================
+
+# 🧰 IDE / EDITOR
+
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+
+# 🔥 TEST ARTIFACTS
+
+# =========================
+
+coverage.out
+*.coverprofile
+
+# =========================
+
+# ⚙️ MINIO LOCAL DATA
+
+# =========================
+
+# if you mount local dir for MinIO
+
+minio-data/
+
+# =========================
+
+# 🧪 CURL / TEST FILES
+
+# =========================
+
+test-data/
+*.http
+
+# =========================
+
+# 📦 NODE (if frontend later)
+
+# =========================
+
+node_modules/
+.next/
+out/
+
+# =========================
+
+# 🔒 CERTS / KEYS
+
+# =========================
+
+*.pem
+*.key
+*.crt
+
+# =========================
+
+# 🧠 MISC
+
+# =========================
+
+*.bak
+*.old
+*.orig
+
+# =========================
+
+# Web
+
+# =========================
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
