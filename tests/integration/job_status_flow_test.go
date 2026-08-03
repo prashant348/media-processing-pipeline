@@ -1,9 +1,9 @@
-package tests
+package integration
 
 import (
 	"context"
 	"media_processing_pipeline/internal/config"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
 	"os"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
 
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -53,7 +54,7 @@ func TestJobStatusFlow(t *testing.T) {
 	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
 
 	// path to real video file for testing
-	videoFilePath := filepath.Join("..", "testdata", "tiny_test_video.mp4")
+	videoFilePath := filepath.Join("..", "testdata", "test_video.mp4")
 
 	// open video file
 	file, err := os.Open(videoFilePath)
@@ -90,55 +91,58 @@ func TestJobStatusFlow(t *testing.T) {
 
 	t.Logf("size of object put: %d", putInfo.Size)
 
+	jobStore := job.NewJobStore()
 	// initialize queue
-	queue := queue.InitQueue(10)
+	queue, _ := queue.NewQueue(10)
 
 	// create wait group
 	wg := &sync.WaitGroup{}
 
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		StorageClient: realClient,
-		Env: &config.Env{
+	pool, _ := worker.NewWorkerPool(
+		queue,
+		3,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-		WaitGroup: wg,
-	}
+		realClient,
+		wg,
+		jobStore,
+	)
 
 	// create videoID from objectName
 	videoID := strings.Split(objectName, ".")[0]
-	jobID := videoID
+	payload := map[string]string{
+		"video_id": videoID,
+	}
 
 	// create job
-	job := jobs.Job{
-		VideoID: videoID,
-		FileKey: objectName,
-	}
+	j := job.NewJob(
+		job.JobTypeTranscoding,
+		payload,
+		job.JobStatusPending,
+	)
 
 	pool.Start()
 
-	jobs.Jobs = make(map[string]jobs.JobStatus)
+	pool.Submit(j)
 
-	pool.Submit(job)
-
-	status := jobs.GetStatus(jobID)
+	status := pool.GetJobStatus(j.ID)
 
 	t.Logf("status instantly after submit: %s", status)
 
-	if status != jobs.JobStatusPending && status != jobs.JobStatusProcessing {
+	if status != job.JobStatusPending && status != job.JobStatusProcessing {
 		t.Fatalf(
 			"Expected status to be %s or %s, got %s",
-			jobs.JobStatusPending,
-			jobs.JobStatusProcessing,
+			job.JobStatusPending,
+			job.JobStatusProcessing,
 			status,
 		)
 	}
 
 	pool.WaitGroup.Wait()
 
-	status = jobs.GetStatus(jobID)
+	status = pool.GetJobStatus(j.ID)
 
 	t.Logf("status after process completed: %s", status)
 

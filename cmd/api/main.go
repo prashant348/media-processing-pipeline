@@ -5,11 +5,13 @@ import (
 	"log"
 	"media_processing_pipeline/internal/config"
 	"media_processing_pipeline/internal/handlers"
+	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/storage"
 	"media_processing_pipeline/internal/worker"
 	"net/http"
 	"sync"
+
 	"github.com/rs/cors"
 )
 
@@ -25,47 +27,47 @@ func main() {
 	storage.InitMinIO(env)
 	// acccess the initialized minio client
 	client := storage.MinioClient
-	// initialize and access queue
-	queue := queue.InitQueue(100)
+	// create job store
+	jobStore := job.NewJobStore()
+	// create jobs queue
+	queue, _ := queue.NewQueue(100)
 	// create wait group
 	wg := &sync.WaitGroup{}
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		Env:           env,
-		StorageClient: client,
-		WaitGroup:     wg,
-	}
-
+	pool, _ := worker.NewWorkerPool(
+		queue,
+		3,
+		env,
+		client,
+		wg,
+		jobStore,
+	)
 	// start the worker pool
 	pool.Start()
 
 	// create handler
-	handler := &handlers.Handler{
-		Pool:          pool,
-		Env:           env,
-		StorageClient: client,
-	}
-
-	fs := http.FileServer(http.Dir("./output"))
+	handler := handlers.NewHandler(
+		pool,
+		client,
+		env,
+	)
 
 	mux := http.NewServeMux()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"http://localhost:5173"},
 		AllowCredentials: true,
-		AllowedMethods: []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
-		Debug: true, // development ke time logs dikhayega
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		Debug:            true, // development ke time logs dikhayega
 	})
 
 	mux.HandleFunc("GET /", handler.HomeHandler)
-	mux.Handle("GET /api/stream/", c.Handler(http.StripPrefix("/api/stream/", fs)))
-	// pass minio client and bucket name as Dependency injection to upload handler
-	mux.HandleFunc("POST /api/upload", handler.UploadHandler())
+	mux.HandleFunc("GET /api/stream/{video_id}/{filename...}", handler.StreamHandler)
+	mux.HandleFunc("POST /api/upload", handler.UploadHandler)
 	mux.HandleFunc("GET /api/status/{job_id}", handler.StatusHandler)
-
+	mux.HandleFunc("GET /api/job/{job_id}", handler.JobHandler)
+	mux.HandleFunc("GET /api/jobs", handler.JobsHandler)
 
 	fmt.Printf("Server is running http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", c.Handler(mux)))

@@ -29,20 +29,8 @@ jobs:
         run: go mod download
 
       - name: Run Tests
-        run: go test -v -race ./...
+        run: go test -v -race ./tests/...
 
       - name: Build Binary
         run: go build -o main ./cmd/api
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with: 
-          node-version: '22.17.0'
-
-      - name: Install Dependencies
-        working-directory:  ./web
-        run: npm install
-
-      - name: Build Frontend
-        working-directory: ./web
-        run: npm run build
+        

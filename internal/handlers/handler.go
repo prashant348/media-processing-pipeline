@@ -7,7 +7,19 @@ import (
 )
 
 type Handler struct {
-	Pool worker.WorkerPoolInterface // pass worker pool interface instead of struct, for loose coupling
+	Pool          worker.WorkerPoolInterface // pass worker pool interface instead of struct, for loose coupling
 	StorageClient storage.ObjectStore
-	Env *config.Env
+	Env           *config.Env
+}
+
+func NewHandler(
+	pool worker.WorkerPoolInterface,
+	storageClient storage.ObjectStore,
+	env *config.Env,
+) *Handler {
+	return &Handler{
+		Pool:          pool,
+		StorageClient: storageClient,
+		Env:           env,
+	}
 }

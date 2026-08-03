@@ -1,9 +1,9 @@
-package tests
+package integration
 
 import (
 	"context"
 	"media_processing_pipeline/internal/config"
-	"media_processing_pipeline/internal/jobs"
+	"media_processing_pipeline/internal/job"
 	"media_processing_pipeline/internal/queue"
 	"media_processing_pipeline/internal/worker"
 	"os"
@@ -17,7 +17,7 @@ import (
 	miniodriver "github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
-func TestFFmpegProcess(t *testing.T) {
+func TestTranscodingJob(t *testing.T) {
 	// create top level background context
 	ctx := context.Background()
 
@@ -52,7 +52,7 @@ func TestFFmpegProcess(t *testing.T) {
 	realClient.MakeBucket(ctx, "videos", minio.MakeBucketOptions{})
 
 	// path to real video file for testing
-	videoFilePath := filepath.Join("..", "testdata", "tiny_test_video.mp4")
+	videoFilePath := filepath.Join("..", "testdata", "test_video.mp4")
 
 	// open video file
 	file, err := os.Open(videoFilePath)
@@ -90,34 +90,40 @@ func TestFFmpegProcess(t *testing.T) {
 
 	t.Logf("size of object put: %d", putInfo.Size)
 
+	jobStore := job.NewJobStore()
 	// initialize queue
-	queue := queue.InitQueue(10)
-
+	queue, _ := queue.NewQueue(10)
 	// create wait group
 	wg := &sync.WaitGroup{}
 
 	// create worker pool
-	pool := &worker.WorkerPool{
-		Queue:         queue,
-		WorkerCount:   3,
-		StorageClient: realClient,
-		Env: &config.Env{
+	pool, _ := worker.NewWorkerPool(
+		queue,
+		3,
+		&config.Env{
 			MinioBucketName: "videos",
 		},
-		WaitGroup: wg,
-	}
+		realClient,
+		wg,
+		jobStore,
+	)
+
+	pool.Start()
 
 	// create videoID from objectName
 	videoID := strings.Split(objectName, ".")[0]
-
-	// create job
-	job := jobs.Job{
-		VideoID: videoID,
-		FileKey: objectName,
+	payload := map[string]string{
+		"video_id": videoID,
 	}
+	// create job
+	job := job.NewJob(
+		job.JobTypeTranscoding,
+		payload,
+		job.JobStatusPending,
+	)
 
 	// pass the job for ffmpeg processing
-	pool.ProcessJob(1, job, pool.Env)
+	pool.TranscodingJob(1, job)
 
 	// wait for job to finish
 	pool.WaitGroup.Wait()
