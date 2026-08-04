@@ -80,6 +80,7 @@ For a more detailed explanation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md
 | Storage | <img src="./assets/MinIO-Logo-Color.svg" width="100px" height="50px" /> | MinIO | S3-compatible object storage for uploaded videos |
 | HTTP Server | `net/http` | net/http | API handling and routing |
 | Containerization | <img src="https://skillicons.dev/icons?i=docker"/> | Docker | Local infrastructure setup |
+| API Client | <img src="https://skillicons.dev/icons?i=postman"/> | Postman | API client for testing |
 | Scripting | <img src="https://skillicons.dev/icons?i=python"/> | Python | Utility scripts (testing, automation, cleanup) |
 | Scripting | <img src="https://skillicons.dev/icons?i=bash"/> | Bash | CLI automation and environment setup |
 
@@ -104,10 +105,53 @@ For a more detailed explanation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md
 
 ## 🛠️ Development Setup
 
-```bash
-docker compose up --build -d # spin up local infrastructure
-go run cmd/api/main.go # start the Go server
-```
+Follow these steps to get the media processing pipeline up and running on your local machine.
+
+> The entire backend stack (Go API + MinIO) starts with a single `docker compose up` command.
+
+### Prerequisites
+Make sure you have the following installed:
+- [Git](https://git-scm.com)
+- [Docker & Docker Compose](https://docker.com)
+
+### 🚀 Getting Started
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd <your-repo-folder-name>
+   ```
+
+2. **Configure Environment Variables (Optional but recommended):**
+   Create a `.env` file in the project root based on the sample in [example.env](example.env).
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Build and Run the Stack:**
+   Run the following command to build the Go backend image and start all services (Go Server + MinIO) in the foreground:
+   ```bash
+   docker compose up --build
+   #or
+   docker compose up --build -d # detached mode
+   ```
+   *Note: Next time when you make changes to the Go code, running this same command will automatically rebuild the container with your latest updates.*
+
+4. **Access the Services:**
+   Once the logs stabilize, you can access the services at:
+   - **Go Backend API:** `http://localhost:8080`
+   - **MinIO Console:** `http://localhost:9001`
+
+> 💡 **Tip:** To view or follow logs for a specific service (e.g., just the Go server or MinIO), use:
+> ```bash
+> # To view static logs
+> docker compose logs <service_name>
+> 
+> # To follow live logs (real-time streaming)
+> docker compose logs -f <service_name>
+> ```
+> *Note: Replace `<service_name>` with the name defined in your `docker-compose.yml` (e.g., `go-server` or `minio`).*
+
 
 ---
 
