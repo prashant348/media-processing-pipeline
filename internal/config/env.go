@@ -17,6 +17,9 @@ type Env struct {
 
 func InitEnv(filenames ...string) error {
 	if err := godotenv.Load(filenames...); err != nil {
+		if len(filenames) == 0 && os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 
