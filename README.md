@@ -111,6 +111,34 @@ go run cmd/api/main.go # start the Go server
 
 ---
 
+## 🌍 Environment Variables
+
+Create a `.env` file in the project root based on the sample in [example.env](example.env).
+
+Required variables:
+
+- `MINIO_ROOT_USER`: MinIO root username
+- `MINIO_ROOT_PASSWORD`: MinIO root password
+- `MINIO_ENDPOINT`: MinIO server endpoint, for example `localhost:9000`
+- `BASE_URL`: base URL used for generated API links, for example `http://localhost:8080`
+- `MINIO_BUCKET_NAME`: bucket name used to store uploaded videos, for example `videos`
+- `OUTPUT_DIR`: local directory where transcoded HLS output is written, for example `output`
+- `CLIENT_BASE_URL`: frontend base URL if needed by generated links, for example `http://localhost:5173`
+
+Example:
+
+```env
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_ENDPOINT=localhost:9000
+BASE_URL=http://localhost:8080
+MINIO_BUCKET_NAME=videos
+OUTPUT_DIR=output
+CLIENT_BASE_URL=http://localhost:5173
+```
+
+---
+
 ## 🔐 API Endpoints
 
 - `POST /api/upload`
